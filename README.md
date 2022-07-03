@@ -7,7 +7,5 @@
 <h3>Planned features</h3>
 <ul>
   <li>Backup codes</li>
-  <li>Password description</li>
   <li>Encrypted files</li>
-  <li>Password generator</li>
 </ul>
