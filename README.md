@@ -7,5 +7,4 @@
 <h3>Planned features</h3>
 <ul>
   <li>Password cracker</li>
-  <li>Remember me</li>
 </ul>
