@@ -6,6 +6,6 @@
 <hr>
 <h3>Planned features</h3>
 <ul>
-  <li>Backup codes</li>
-  <li>Encrypted files</li>
+  <li>Password cracker</li>
+  <li>Remember me</li>
 </ul>
