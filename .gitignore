@@ -1,6 +1,5 @@
 /target/
 /Core/
-/src/test/
 config.json
 /.idea/
 !.mvn/wrapper/maven-wrapper.jar
