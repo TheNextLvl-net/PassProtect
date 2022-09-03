@@ -408,8 +408,8 @@ public class Menu extends Panel {
         for (int i = 0; i < categories.getRowCount(); i++) if (categories.isExpanded(i)) rows.add(i);
         DefaultMutableTreeNode categories = new DefaultMutableTreeNode();
         for (Category category : storage.getCategories()) {
-            String filter = searchBar.getText();
-            if (filter != null && !filter.isEmpty() && !category.getName().contains(filter)) continue;
+            String filter = searchBar.getText() != null ? searchBar.getText() : searchBar.getText().toLowerCase();
+            if (filter != null && !filter.isEmpty() && !category.getName().toLowerCase().contains(filter)) continue;
             categories.add(category.tree());
         }
         this.categories.setModel(new DefaultTreeModel(categories, true));
