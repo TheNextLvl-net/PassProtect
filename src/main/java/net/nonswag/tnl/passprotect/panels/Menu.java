@@ -8,6 +8,7 @@ import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.Uninstaller;
 import net.nonswag.tnl.passprotect.api.entry.*;
+import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
 import net.nonswag.tnl.passprotect.api.nodes.*;
@@ -51,6 +52,8 @@ public class Menu extends Panel {
     private JPopupMenu actionMenu;
     @Nonnull
     private JButton newCategory;
+    @Nonnull
+    private JTextField searchBar;
 
     @Nonnull
     private final Storage storage;
@@ -101,11 +104,23 @@ public class Menu extends Panel {
         categories.setUI(new BasicTreeUI());
         registerListeners();
         constructActionMenu();
+        constructSearchBar();
         constructMenu();
         update();
     }
 
+    private void constructSearchBar() {
+        searchBar.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(@Nonnull KeyEvent event) {
+                update();
+            }
+        });
+    }
+
     private void registerListeners() {
+        panel.registerKeyboardAction(actionEvent -> this.searchBar.requestFocus(),
+                KeyStroke.getKeyStroke("control F"), JComponent.WHEN_IN_FOCUSED_WINDOW);
         categories.addTreeExpansionListener(new TreeExpansionListener() {
 
             @Override
@@ -392,7 +407,11 @@ public class Menu extends Panel {
         List<Integer> rows = new ArrayList<>();
         for (int i = 0; i < categories.getRowCount(); i++) if (categories.isExpanded(i)) rows.add(i);
         DefaultMutableTreeNode categories = new DefaultMutableTreeNode();
-        for (Category category : storage.getCategories()) categories.add(category.tree());
+        for (Category category : storage.getCategories()) {
+            String filter = searchBar.getText();
+            if (filter != null && !filter.isEmpty() && !category.getName().contains(filter)) continue;
+            categories.add(category.tree());
+        }
         this.categories.setModel(new DefaultTreeModel(categories, true));
         for (int row : rows) {
             TreePath path = this.categories.getPathForRow(row);
@@ -547,5 +566,9 @@ public class Menu extends Panel {
     @Override
     public boolean isResizable() {
         return true;
+    }
+
+    private void createUIComponents() {
+        this.searchBar = new TextField().setPlaceholder("Enter search query");
     }
 }
