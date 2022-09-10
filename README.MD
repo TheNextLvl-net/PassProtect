@@ -7,5 +7,5 @@
 <h3>Planned features</h3>
 <ul>
   <li>Credit card information</li>
-  <li>Search bar</li>
+  <li>Trusted Devices (USB/Bluetooth)</li>
 </ul>
