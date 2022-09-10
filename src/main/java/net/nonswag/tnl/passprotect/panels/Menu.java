@@ -18,6 +18,7 @@ import net.nonswag.tnl.passprotect.dialogs.ChangePassword;
 import net.nonswag.tnl.passprotect.dialogs.entries.BackupCodeEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.FileEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.PasswordEntry;
+import net.nonswag.tnl.passprotect.dialogs.entries.TOTPEntry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -131,6 +132,10 @@ public class Menu extends Panel {
                 else if (component instanceof PasswordTreeNode) expandPasswordTreeNode(event);
                 else if (component instanceof BackupCodeTreeNode) expandBackupCodeTreeNode(event);
                 else if (component instanceof FileTreeNode) expandFileTreeNode(event);
+                else if (component instanceof TOTPTreeNode) expandTOTPTreeNode(event);
+                else if (!(component instanceof CategoryTreeNode)) {
+                    new IllegalStateException("expanded an unknown tree: %s".formatted(component.getClass().getName())).printStackTrace();
+                }
             }
 
             private void expandPasswordTreeNode(@Nonnull TreeExpansionEvent event) {
@@ -184,6 +189,21 @@ public class Menu extends Panel {
                 }).onSuccess(() -> collapseTreeNode(node, event.getPath())));
             }
 
+            private void expandTOTPTreeNode(@Nonnull TreeExpansionEvent event) {
+                if (!(event.getPath().getLastPathComponent() instanceof TOTPTreeNode node)) return;
+                ActiveDialogs.getInstance().put(node.path(), new TOTPEntry(node.getEntry(), config, (totp, type) -> {
+                    if (!type.isConfirm() || totp.equals(node.getEntry())) return true;
+                    if (!(node.getParent() instanceof CategoryTreeNode parent)) return true;
+                    if (!totp.getAccountName().isEmpty()) {
+                        parent.getEntry().remove(node.getEntry());
+                        parent.getEntry().add(totp);
+                        update();
+                        return true;
+                    } else PassProtect.showErrorDialog("Account name cannot be blank");
+                    return false;
+                }).onSuccess(() -> collapseTreeNode(node, event.getPath())));
+            }
+
             private void collapseTreeNode(@Nonnull EntryTreeNode<?> node, @Nonnull TreePath path) {
                 ActiveDialogs.getInstance().remove(node.path());
                 categories.collapsePath(path);
@@ -194,6 +214,10 @@ public class Menu extends Panel {
                 if (jDialog instanceof PasswordEntry dialog) dialog.close(PasswordEntry.CloseEvent.Type.CLOSE);
                 else if (jDialog instanceof BackupCodeEntry dialog) dialog.close(BackupCodeEntry.CloseEvent.Type.CLOSE);
                 else if (jDialog instanceof FileEntry dialog) dialog.close(FileEntry.CloseEvent.Type.CLOSE);
+                else if (jDialog instanceof TOTPEntry dialog) dialog.close(TOTPEntry.CloseEvent.Type.CLOSE);
+                else if (jDialog != null) {
+                    new IllegalStateException("collapsed an unknown tree: %s".formatted(jDialog.getClass().getName())).printStackTrace();
+                }
                 if (outdated) categories.collapsePath(event.getPath());
             }
 
@@ -212,6 +236,7 @@ public class Menu extends Panel {
         JMenuItem category = new JMenuItem("Category", KeyEvent.VK_C);
         JMenuItem password = new JMenuItem("Password", KeyEvent.VK_P);
         JMenuItem backupCodes = new JMenuItem("Backup code", KeyEvent.VK_B);
+        JMenuItem totpCode = new JMenuItem("TOTP code", KeyEvent.VK_T);
         JMenuItem newFile = new JMenuItem("File", KeyEvent.VK_F);
 
         aNew.setMnemonic(KeyEvent.VK_N);
@@ -219,6 +244,7 @@ public class Menu extends Panel {
         category.addActionListener(actionEvent -> newCategory(Category::new));
         password.addActionListener(actionEvent -> newPassword(Password::new));
         backupCodes.addActionListener(actionEvent -> newBackupCode(BackupCode::new));
+        totpCode.addActionListener(actionEvent -> newTOTPCode(TOTP::new));
         newFile.addActionListener(actionEvent -> newFile(File::new));
         actionMenu.addFocusListener(new FocusAdapter() {
             @Override
@@ -238,6 +264,7 @@ public class Menu extends Panel {
         aNew.add(category);
         aNew.add(password);
         aNew.add(backupCodes);
+        aNew.add(totpCode);
         aNew.add(newFile);
 
         actionMenu.add(aNew);
@@ -495,6 +522,22 @@ public class Menu extends Panel {
         else PassProtect.showErrorDialog("You have to select a category first");
     }
 
+    private void newTOTPCode(@Nonnull TriFunction<String, String, String, TOTP> function) {
+        CategoryTreeNode node = getSelectedCategory();
+        if (node != null) new TOTPEntry(new TOTP("", "", ""), config, (totp, type) -> {
+            if (!type.isConfirm()) return true;
+            if (!totp.getAccountName().isEmpty()) {
+                if (!exists(totp, node.getEntry())) {
+                    node.getEntry().add(function.apply(totp.getIssuer(), totp.getAccountName(), totp.getSecretKey()));
+                    update();
+                    return true;
+                } else PassProtect.showErrorDialog("A similar totp code does already exist in this category");
+            } else PassProtect.showErrorDialog("Account name cannot be empty");
+            return false;
+        });
+        else PassProtect.showErrorDialog("You have to select a category first");
+    }
+
     private void newFile(@Nonnull BiFunction<String, String[], File> function) {
         CategoryTreeNode node = getSelectedCategory();
         if (node != null) new FileEntry(new File(""), config, (file, type) -> {
@@ -509,6 +552,11 @@ public class Menu extends Panel {
             return false;
         });
         else PassProtect.showErrorDialog("You have to select a category first");
+    }
+
+    private static boolean exists(@Nonnull TOTP totp, @Nonnull Category category) {
+        for (Entry e : category) if (e instanceof TOTP && e.getName().equals(totp.getName())) return true;
+        return false;
     }
 
     private static boolean exists(@Nonnull Password password, @Nonnull Category category) {

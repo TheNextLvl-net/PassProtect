@@ -131,7 +131,7 @@ public class FileEntry extends JDialog {
     }
 
     @Nonnull
-    public File getFile() {
+    private File getFile() {
         return new File(name.getText(), getContent());
     }
 

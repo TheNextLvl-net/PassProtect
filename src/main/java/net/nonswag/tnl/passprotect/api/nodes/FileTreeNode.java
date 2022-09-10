@@ -22,6 +22,6 @@ public class FileTreeNode extends EntryTreeNode<File> {
     public Style style(boolean selected) {
         return new Style("<span style='color:gray;text-decoration: %s;'>%s</span>".formatted(
                 selected ? "underline" : "none", getEntry().getName()
-        ), TreeIconRenderer.Logo.FILE, TreeIconRenderer.Logo.FILE);
+        ), TreeIconRenderer.Logo.FILE_OPEN, TreeIconRenderer.Logo.FILE_CLOSED);
     }
 }

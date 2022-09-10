@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.TreeSet;
 
 public class Storage extends TextFile {
 
@@ -81,6 +84,7 @@ public class Storage extends TextFile {
             case Entry.PASSWORD -> parsePassword(object);
             case Entry.BACKUP_CODE -> parseBackupCode(object);
             case Entry.FILE -> parseFile(object);
+            case Entry.TOTP -> parseTotp(object);
             default -> null;
         };
     }
@@ -127,12 +131,19 @@ public class Storage extends TextFile {
         }
     }
 
+    @Nullable
+    private TOTP parseTotp(@Nonnull JsonObject object) {
+        if (!object.has("issuer") || (!object.has("account-name") && !object.has("secret-key"))) return null;
+        return new TOTP(object.get("issuer").getAsString(), object.get("account-name").getAsString(), object.get("secret-key").getAsString());
+    }
+
     private int getType(@Nonnull String key) {
         return switch (key.split(";")[0]) {
             case "0" -> Entry.CATEGORY;
             case "1" -> Entry.PASSWORD;
             case "2" -> Entry.BACKUP_CODE;
             case "3" -> Entry.FILE;
+            case "4" -> Entry.TOTP;
             default -> Entry.UNKNOWN;
         };
     }
@@ -140,28 +151,28 @@ public class Storage extends TextFile {
     @Nonnull
     private List<Category> parseCategories(@Nonnull JsonArray array) {
         List<Category> categories = new ArrayList<>();
-        for (JsonElement entry : array) {
-            if (!entry.isJsonObject()) continue;
+        array.forEach(entry -> {
+            if (!entry.isJsonObject()) return;
             Category category = (Category) parse(Entry.CATEGORY, entry.getAsJsonObject());
             if (category != null) categories.add(category);
-        }
+        });
         return categories;
     }
 
     @Nonnull
     private List<Entry> parseEntries(@Nonnull JsonObject object) {
         List<Entry> entries = new ArrayList<>();
-        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-            if (!entry.getValue().isJsonObject()) continue;
+        object.entrySet().forEach(entry -> {
+            if (!entry.getValue().isJsonObject()) return;
             entries.add(parse(getType(entry.getKey()), entry.getValue().getAsJsonObject()));
-        }
+        });
         return entries;
     }
 
     @Nonnull
     private JsonArray parse(@Nonnull TreeSet<Category> categories) {
         JsonArray root = new JsonArray();
-        for (Category category : categories) root.add(category.parse());
+        categories.forEach(category -> root.add(category.parse()));
         return root;
     }
 

@@ -3,6 +3,7 @@ package net.nonswag.tnl.passprotect;
 import com.github.weisj.darklaf.theme.laf.*;
 import lombok.Getter;
 import net.nonswag.tnl.core.Core;
+import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
 
@@ -88,19 +89,19 @@ public class Launcher {
     }
 
     private static void help(@Nonnull String command, boolean shortcut) {
-        System.err.printf("Unknown command: %s", command).println();
-        System.out.println("Possible arguments:");
-        System.out.println("\sstart (installed)");
-        System.out.println("\s\s(starts pass-protect (as installed version))");
-        System.out.println("\suninstall");
-        System.out.println("\s\s(starts the pass-protect uninstaller)");
+        Logger.error.printf("Unknown command: %s", command).println();
+        Logger.info.println("Possible arguments:");
+        Logger.info.println("\sstart (installed)");
+        Logger.info.println("\s\s(starts pass-protect (as installed version))");
+        Logger.info.println("\suninstall");
+        Logger.info.println("\s\s(starts the pass-protect uninstaller)");
         if (shortcut) return;
-        System.out.println("\sinstall");
-        System.out.println("\s\s(starts the pass-protect installer)");
-        System.out.println("\supdate");
-        System.out.println("\s\s(updates the existing pass-protect installation)");
-        System.out.println("\sshortcut");
-        System.out.println("\s\s(register the pass-protect bash command)");
+        Logger.info.println("\sinstall");
+        Logger.info.println("\s\s(starts the pass-protect installer)");
+        Logger.info.println("\supdate");
+        Logger.info.println("\s\s(updates the existing pass-protect installation)");
+        Logger.info.println("\sshortcut");
+        Logger.info.println("\s\s(register the pass-protect bash command)");
     }
 
     private static void registerShutdownHook() {
