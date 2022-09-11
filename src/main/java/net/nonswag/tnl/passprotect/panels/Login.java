@@ -17,10 +17,15 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 
 @Getter
 public class Login extends Panel {
+
+    @Nonnull
+    private static final HashMap<String, Integer> failedAttempts = new HashMap<>();
+
     @Nonnull
     private JPanel panel;
     @Nonnull
@@ -76,7 +81,7 @@ public class Login extends Panel {
         String password = String.valueOf(this.password.getPassword());
         String username = this.username.getSelectedItem() == null ? "" : (String) this.username.getSelectedItem();
         File saves = new File(username, "saves.pp");
-        if (!saves.exists() || !saves.isFile()) {
+        if (!saves.exists() || !saves.isFile() || !username.matches("^[a-zA-Z0-9]+$")) {
             PassProtect.invalidUser(username);
             this.username.requestFocus();
         } else try {
@@ -84,6 +89,7 @@ public class Login extends Panel {
             Config config = new Config(username);
             Config.setInstance(config);
             try {
+                failedAttempts.remove(username);
                 Config.APP.setLastUser(username);
                 Launcher.applyAppearance(config);
                 PassProtect.getInstance().setLoggedIn(true);
@@ -93,14 +99,16 @@ public class Login extends Panel {
         } catch (Exception e) {
             if (!password.isEmpty()) {
                 try {
-                    Thread.sleep(750);
-                    PassProtect.showErrorDialog("Wrong password");
+                    failedAttempts.put(username, failedAttempts.getOrDefault(username, 0) + 1);
+                    long delay = failedAttempts.get(username) * 750L;
+                    PassProtect.showErrorDialog("Wrong password\nYou have to wait %s seconds before you can try again".formatted(delay / 1000d));
+                    Thread.sleep(delay);
                     this.password.setText("");
-                    this.password.setForeground(Color.GRAY);
                 } catch (InterruptedException ignored) {
                 }
             } else PassProtect.showErrorDialog("Enter a password");
-            this.password.requestFocus();
+            if (failedAttempts.getOrDefault(username, 0) >= 3) forgotPassword.requestFocus();
+            else this.password.requestFocus();
         }
     }
 
