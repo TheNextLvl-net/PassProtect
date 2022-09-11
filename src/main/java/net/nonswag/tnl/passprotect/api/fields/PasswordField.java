@@ -96,6 +96,7 @@ public class PasswordField extends JPasswordField {
         boolean b = text.isEmpty() || text.equals(getPlaceholder());
         setForeground(b ? color : Color.GRAY);
         setEchoChar(b || isPasswordVisible() ? 0 : '°');
+        putClientProperty("JPasswordField.cutCopyAllowed", passwordVisible);
     }
 
     @Override
