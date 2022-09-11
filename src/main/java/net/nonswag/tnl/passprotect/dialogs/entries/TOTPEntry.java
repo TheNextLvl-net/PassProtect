@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.net.URI;
 import java.util.HashMap;
@@ -22,15 +23,13 @@ public class TOTPEntry extends JDialog {
     @Nonnull
     private JPanel panel;
     @Nonnull
-    private JButton buttonOK, buttonCancel, qrCode;
+    private JButton buttonOK, buttonCancel, qrCode, code;
     @Nonnull
     private JTextField issuer, accountName;
     @Nonnull
     private JPasswordField secretKey;
     @Nonnull
     private JCheckBox checkBox;
-    @Nonnull
-    private JLabel code;
 
     @Nonnull
     private final CloseEvent closeEvent;
@@ -78,9 +77,10 @@ public class TOTPEntry extends JDialog {
             String secret = secretKey.getPassword() == null ? "" : String.valueOf(secretKey.getPassword());
             code.setText(StringUtil.format("0".repeat(6), Authenticator.INSTANCE.getTotpPassword(secret)));
             qrCode.setEnabled(!accountName.getText().isEmpty() || isEmpty());
+            code.setVisible(true);
         } catch (IllegalArgumentException e) {
             qrCode.setEnabled(isEmpty());
-            code.setText("Invalid secret key");
+            code.setVisible(false);
         }
     }
 
@@ -91,6 +91,10 @@ public class TOTPEntry extends JDialog {
     }
 
     private void registerListeners() {
+        code.addActionListener(actionEvent -> {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(code.getText()), (clipboard, transferable) -> code.setEnabled(true));
+            code.setEnabled(false);
+        });
         buttonOK.addActionListener(e -> close(CloseEvent.Type.CONFIRM));
         buttonCancel.addActionListener(e -> close(CloseEvent.Type.CANCEL));
         panel.registerKeyboardAction(e -> close(CloseEvent.Type.CLOSE), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
