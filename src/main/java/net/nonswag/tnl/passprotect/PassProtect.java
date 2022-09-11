@@ -77,7 +77,7 @@ public class PassProtect {
     public static List<String> retrieveUsers() {
         List<String> users = new ArrayList<>();
         File[] directories = new File("").getAbsoluteFile().listFiles((file) -> {
-            if (!file.isDirectory()) return false;
+            if (!file.getName().matches("^[a-zA-Z0-9]+$")) return false;
             File saves = new File(file, "saves.pp");
             return saves.exists() && saves.isFile();
         });

@@ -71,12 +71,14 @@ public class Registration extends Panel {
             }
         });
         username.addKeyListener(new KeyAdapter() {
+
             @Override
             public void keyReleased(@Nonnull KeyEvent event) {
                 if (event.getKeyCode() == KeyEvent.VK_DOWN) password.requestFocus();
                 if (event.getKeyChar() != '\n') return;
                 String username = Registration.this.username.getText() == null ? "" : Registration.this.username.getText();
                 if (username.isEmpty()) PassProtect.showErrorDialog("Enter a username");
+                else if (!isLegal(username)) PassProtect.showErrorDialog("Username contains illegal characters");
                 else if (username.length() < 4) PassProtect.showErrorDialog("Username is too short");
                 else password.requestFocus();
             }
@@ -90,12 +92,16 @@ public class Registration extends Panel {
         back.setEnabled(!PassProtect.retrieveUsers().isEmpty());
     }
 
+    private boolean isLegal(@Nonnull String username) {
+        return username.matches("^[a-zA-Z0-9]+$");
+    }
+
     private void handleRegistration() {
         String password = String.valueOf(Registration.this.password.getPassword());
         String confirm = String.valueOf(Registration.this.confirm.getPassword());
         String username = this.username.getText() == null ? "" : this.username.getText();
         File saves = new File(username, "saves.pp");
-        if (!saves.exists() && username.length() >= 4 && password.equals(confirm) && password.length() >= 8) {
+        if (!saves.exists() && username.length() >= 4 && password.equals(confirm) && password.length() >= 8 && isLegal(username)) {
             try {
                 Storage.setInstance(new Storage(username, password.getBytes(StandardCharsets.UTF_8)));
                 Config config = new Config(username);
@@ -120,6 +126,9 @@ public class Registration extends Panel {
         } else if (password.isEmpty()) {
             PassProtect.showErrorDialog("Enter a password");
             Registration.this.password.requestFocus();
+        } else if (!isLegal(username)) {
+            PassProtect.showErrorDialog("Username contains illegal characters");
+            Registration.this.username.requestFocus();
         } else {
             PassProtect.showErrorDialog("Password is too short");
             Registration.this.password.requestFocus();
