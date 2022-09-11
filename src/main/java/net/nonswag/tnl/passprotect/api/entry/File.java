@@ -52,6 +52,7 @@ public class File implements Entry {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         return o instanceof File file && name.equals(file.name) && Arrays.equals(content, file.content);
     }
 

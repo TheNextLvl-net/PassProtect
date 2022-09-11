@@ -5,6 +5,7 @@ import lombok.Getter;
 import net.nonswag.tnl.passprotect.api.nodes.CategoryTreeNode;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.TreeSet;
@@ -22,6 +23,11 @@ public class Category extends TreeSet<Entry> implements Entry {
 
     public Category(@Nonnull String name) {
         this.name = name;
+    }
+
+    @Override
+    public boolean remove(@Nullable Object object) {
+        return removeIf(entry -> Objects.equals(entry, object));
     }
 
     @Nonnull
@@ -56,6 +62,7 @@ public class Category extends TreeSet<Entry> implements Entry {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         return o instanceof Category c && name.equals(c.name);
     }
 

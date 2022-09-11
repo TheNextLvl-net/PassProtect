@@ -53,16 +53,15 @@ public class Password implements Entry {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof Password password && password.name.equals(name)
+        if (o == this) return true;
+        return o instanceof Password password && name.equals(password.name)
                 && Objects.equals(description, password.description)
-                && Arrays.equals(password.password, this.password);
+                && Arrays.equals(this.password, password.password);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(name);
-        result = 31 * result + Arrays.hashCode(password);
-        return result;
+        return Objects.hash(name);
     }
 
     @Override

@@ -128,7 +128,7 @@ public class Menu extends Panel {
             public void treeExpanded(@Nonnull TreeExpansionEvent event) {
                 Object component = event.getPath().getLastPathComponent();
                 if (!(component instanceof EntryTreeNode<?> node)) return;
-                if (ActiveDialogs.getInstance().containsKey(node.path())) treeCollapsed(event, true);
+                if (ActiveDialogs.getInstance().containsKey(node.identity())) treeCollapsed(event, true);
                 else if (component instanceof PasswordTreeNode) expandPasswordTreeNode(event);
                 else if (component instanceof BackupCodeTreeNode) expandBackupCodeTreeNode(event);
                 else if (component instanceof FileTreeNode) expandFileTreeNode(event);
@@ -140,7 +140,7 @@ public class Menu extends Panel {
 
             private void expandPasswordTreeNode(@Nonnull TreeExpansionEvent event) {
                 if (!(event.getPath().getLastPathComponent() instanceof PasswordTreeNode node)) return;
-                ActiveDialogs.getInstance().put(node.path(), new PasswordEntry(node.getEntry(), config, (password, type) -> {
+                ActiveDialogs.getInstance().put(node.identity(), new PasswordEntry(node.getEntry(), config, (password, type) -> {
                     if (!type.isConfirm() || password.equals(node.getEntry())) return true;
                     if (!(node.getParent() instanceof CategoryTreeNode parent)) return true;
                     if (!password.getName().isEmpty() && password.getPassword().length > 0) {
@@ -156,7 +156,7 @@ public class Menu extends Panel {
 
             private void expandBackupCodeTreeNode(@Nonnull TreeExpansionEvent event) {
                 if (!(event.getPath().getLastPathComponent() instanceof BackupCodeTreeNode node)) return;
-                ActiveDialogs.getInstance().put(node.path(), new BackupCodeEntry(node.getEntry(), config, (backupCode, type) -> {
+                ActiveDialogs.getInstance().put(node.identity(), new BackupCodeEntry(node.getEntry(), config, (backupCode, type) -> {
                     if (!type.isConfirm()) return true;
                     BackupCode code = backupCode.get();
                     if (code.equals(node.getEntry())) return true;
@@ -176,7 +176,7 @@ public class Menu extends Panel {
 
             private void expandFileTreeNode(@Nonnull TreeExpansionEvent event) {
                 if (!(event.getPath().getLastPathComponent() instanceof FileTreeNode node)) return;
-                ActiveDialogs.getInstance().put(node.path(), new FileEntry(node.getEntry(), config, (file, type) -> {
+                ActiveDialogs.getInstance().put(node.identity(), new FileEntry(node.getEntry(), config, (file, type) -> {
                     if (!type.isConfirm() || file.equals(node.getEntry())) return true;
                     if (!(node.getParent() instanceof CategoryTreeNode parent)) return true;
                     if (!file.getName().isEmpty()) {
@@ -191,7 +191,7 @@ public class Menu extends Panel {
 
             private void expandTOTPTreeNode(@Nonnull TreeExpansionEvent event) {
                 if (!(event.getPath().getLastPathComponent() instanceof TOTPTreeNode node)) return;
-                ActiveDialogs.getInstance().put(node.path(), new TOTPEntry(node.getEntry(), config, (totp, type) -> {
+                ActiveDialogs.getInstance().put(node.identity(), new TOTPEntry(node.getEntry(), config, (totp, type) -> {
                     if (!type.isConfirm() || totp.equals(node.getEntry())) return true;
                     if (!(node.getParent() instanceof CategoryTreeNode parent)) return true;
                     if (!totp.getAccountName().isEmpty()) {
@@ -205,12 +205,13 @@ public class Menu extends Panel {
             }
 
             private void collapseTreeNode(@Nonnull EntryTreeNode<?> node, @Nonnull TreePath path) {
-                ActiveDialogs.getInstance().remove(node.path());
+                ActiveDialogs.getInstance().remove(node.identity());
                 categories.collapsePath(path);
             }
 
             public void treeCollapsed(@Nonnull TreeExpansionEvent event, boolean outdated) {
-                JDialog jDialog = ActiveDialogs.getInstance().get(event.getPath().toString());
+                if(!(event.getPath().getLastPathComponent() instanceof EntryTreeNode<?> path)) return;
+                JDialog jDialog = ActiveDialogs.getInstance().get(path.identity());
                 if (jDialog instanceof PasswordEntry dialog) dialog.close(PasswordEntry.CloseEvent.Type.CLOSE);
                 else if (jDialog instanceof BackupCodeEntry dialog) dialog.close(BackupCodeEntry.CloseEvent.Type.CLOSE);
                 else if (jDialog instanceof FileEntry dialog) dialog.close(FileEntry.CloseEvent.Type.CLOSE);

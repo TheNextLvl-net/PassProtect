@@ -53,6 +53,7 @@ public class BackupCode implements Entry {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         return o instanceof BackupCode backupCode && name.equals(backupCode.name) && Arrays.equals(codes, backupCode.codes);
     }
 

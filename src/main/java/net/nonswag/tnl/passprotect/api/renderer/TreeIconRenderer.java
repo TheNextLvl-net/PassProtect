@@ -29,13 +29,17 @@ public final class TreeIconRenderer extends DefaultTreeCellRenderer {
     @Override
     @SuppressWarnings("rawtypes")
     public Component getTreeCellRendererComponent(@Nonnull JTree tree, @Nonnull Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean focus) {
-        expanded = value instanceof PasswordTreeNode node ? ActiveDialogs.getInstance().containsKey(node.path()) : expanded;
-        expanded = value instanceof BackupCodeTreeNode node ? ActiveDialogs.getInstance().containsKey(node.path()) : expanded;
-        super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, false);
-        if (value instanceof EntryTreeNode node) {
-            this.setText("<html>" + node.style(selected).title() + "</html>");
-            this.setFont(config.getFont());
-            this.setIcon((expanded ? node.style(selected).expanded() : node.style(selected).collapsed()).getIcon(config));
+        try {
+            expanded = value instanceof PasswordTreeNode node ? ActiveDialogs.getInstance().containsKey(node.identity()) : expanded;
+            expanded = value instanceof BackupCodeTreeNode node ? ActiveDialogs.getInstance().containsKey(node.identity()) : expanded;
+            super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, false);
+        } catch (Exception ignored) {
+        } finally {
+            if (value instanceof EntryTreeNode node) {
+                this.setText("<html>" + node.style(selected).title() + "</html>");
+                this.setFont(config.getFont());
+                this.setIcon((expanded ? node.style(selected).expanded() : node.style(selected).collapsed()).getIcon(config));
+            }
         }
         return this;
     }

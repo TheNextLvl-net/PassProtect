@@ -23,8 +23,8 @@ public abstract class EntryTreeNode<E extends Entry> extends DefaultMutableTreeN
     public abstract String type();
 
     @Nonnull
-    public String path() {
-        return Arrays.toString(getPath());
+    public String identity() {
+        return Arrays.toString(getPath()) + "-" + getClass().getName();
     }
 
     @Nonnull

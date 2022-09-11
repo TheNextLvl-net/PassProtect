@@ -55,6 +55,7 @@ public class TOTP implements Entry {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         return o instanceof TOTP totp && issuer.equals(totp.issuer) && accountName.equals(totp.accountName) && secretKey.equals(totp.secretKey);
     }
 
