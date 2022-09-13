@@ -15,15 +15,15 @@ public class Uninstaller {
         if (!location.exists()) throw new FileNotFoundException("PassProtect is not installed on this user account");
         boolean success = FileHelper.delete(new File(new File(home, ".local/share/applications"), "pass-protect.desktop"));
         if (eraseData == null) {
-            int code = JOptionPane.showConfirmDialog(null, "Do you want to delete all user data?\nYour data will be gone forever!", null, JOptionPane.YES_NO_OPTION);
+            int code = JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you want to delete all user data?\nYour data will be gone forever!", null, JOptionPane.YES_NO_OPTION);
             if (code == JOptionPane.CLOSED_OPTION) {
-                JOptionPane.showMessageDialog(null, "Interrupted the uninstallation process", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Interrupted the uninstallation process", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
                 System.exit(1);
             } else if (code == JOptionPane.YES_OPTION && !FileHelper.delete(location)) success = false;
         } else if (eraseData && !FileHelper.delete(location)) success = false;
         if (!FileHelper.delete(new File(new File(home, "/Desktop"), "pass-protect.desktop"))) success = false;
         if (success) {
-            JOptionPane.showInternalMessageDialog(null, "Successfully uninstalled PassProtect", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
         } else PassProtect.showErrorDialog("Could not uninstall PassProtect properly");
         System.exit(success ? 0 : 1);
     }

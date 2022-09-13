@@ -38,7 +38,7 @@ public class ResetPassword extends JDialog {
         File dir = new File(username.getSelectedItem() == null ? "" : (String) username.getSelectedItem());
         File saves = new File(dir, "saves.pp");
         if (saves.exists() && saves.isFile() && checkBox.isVisible() && checkBox.isSelected()) {
-            String text = JOptionPane.showInputDialog("To reset enter: CONFIRM");
+            String text = JOptionPane.showInputDialog(PassProtect.getInstance().getWindow(), "To reset enter: CONFIRM");
             if (!"CONFIRM".equals(text)) return false;
             try {
                 if (!saves.exists() || !saves.isFile()) return true;
@@ -92,7 +92,7 @@ public class ResetPassword extends JDialog {
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
     }

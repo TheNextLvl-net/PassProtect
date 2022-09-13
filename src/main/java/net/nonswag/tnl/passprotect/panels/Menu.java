@@ -15,6 +15,7 @@ import net.nonswag.tnl.passprotect.api.nodes.*;
 import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
 import net.nonswag.tnl.passprotect.dialogs.ActiveDialogs;
 import net.nonswag.tnl.passprotect.dialogs.ChangePassword;
+import net.nonswag.tnl.passprotect.dialogs.PasswordReminder;
 import net.nonswag.tnl.passprotect.dialogs.entries.BackupCodeEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.FileEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.PasswordEntry;
@@ -38,6 +39,7 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -65,7 +67,7 @@ public class Menu extends Panel {
     private final Runnable deleteAction = () -> {
         EntryTreeNode<?> node = getSelectedEntry();
         if (node == null) Toolkit.getDefaultToolkit().beep();
-        else if (JOptionPane.showConfirmDialog(null, "Do you really want to delete this " + node.type() + "?", "Delete " + node.type(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
+        else if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to delete this " + node.type() + "?", "Delete " + node.type(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
             if (node.getParent() instanceof CategoryTreeNode parent) parent.getEntry().remove(node.getEntry());
             else if (node.getEntry() instanceof Category child) getStorage().getCategories().remove(child);
             update();
@@ -76,7 +78,7 @@ public class Menu extends Panel {
     private final Runnable renameAction = () -> {
         CategoryTreeNode node = getSelectedCategory();
         if (node != null) {
-            String name = JOptionPane.showInputDialog("Enter a new name", node.getEntry().getName());
+            String name = JOptionPane.showInputDialog(PassProtect.getInstance().getWindow(), "Enter a new name", node.getEntry().getName());
             if (name == null || name.isEmpty()) return;
             TreeSet categories = node.getParent() instanceof CategoryTreeNode parent ? parent.getEntry() : getStorage().getCategories();
             Category renamed = new Category(name, node.getEntry());
@@ -287,6 +289,7 @@ public class Menu extends Panel {
         JMenuItem category = new JMenuItem("Category", KeyEvent.VK_C);
         JMenuItem password = new JMenuItem("Password", KeyEvent.VK_P);
         JMenuItem backupCodes = new JMenuItem("Backup code", KeyEvent.VK_B);
+        JMenuItem totpCode = new JMenuItem("TOTP code", KeyEvent.VK_T);
         JMenuItem newFile = new JMenuItem("File", KeyEvent.VK_F);
         JMenuItem delete = new JMenuItem("Delete", KeyEvent.VK_D);
         JMenuItem rename = new JMenuItem("Rename", KeyEvent.VK_R);
@@ -311,7 +314,8 @@ public class Menu extends Panel {
         category.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         password.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
         backupCodes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
-        newFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
+        totpCode.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
+        newFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0));
         logout.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
         delete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
         rename.setAccelerator(KeyStroke.getKeyStroke("control shift R"));
@@ -319,6 +323,7 @@ public class Menu extends Panel {
         category.addActionListener(actionEvent -> newCategory(Category::new));
         password.addActionListener(actionEvent -> newPassword(Password::new));
         backupCodes.addActionListener(actionEvent -> newBackupCode(BackupCode::new));
+        totpCode.addActionListener(actionEvent -> newTOTPCode(TOTP::new));
         newFile.addActionListener(actionEvent -> newFile(File::new));
         clear.addActionListener(actionEvent -> {
             if (categories.getSelectionPath() != null) categories.clearSelection();
@@ -339,13 +344,13 @@ public class Menu extends Panel {
             try {
                 storage.save();
                 config.save();
-                JOptionPane.showInternalMessageDialog(null, "Saved all changes", "Saved", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Saved all changes", "Saved", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e) {
                 failedToSave(e);
             }
         });
         reloadAll.addActionListener(actionEvent -> {
-            if (JOptionPane.showConfirmDialog(null, "Changes you made may not be saved", "Reload All from Disk", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
+            if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Changes you made may not be saved", "Reload All from Disk", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
                 try {
                     config.load();
                     storage.init(true);
@@ -359,7 +364,7 @@ public class Menu extends Panel {
         });
         exit.addActionListener(actionEvent -> System.exit(0));
         logout.addActionListener(actionEvent -> {
-            if (JOptionPane.showConfirmDialog(null, "Do you really want to close this session?", "Close session", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
+            if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to close this session?", "Close session", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
                 try {
                     storage.save();
                     config.save();
@@ -376,7 +381,7 @@ public class Menu extends Panel {
         delete.addActionListener(actionEvent -> deleteAction.run());
         changePassword.addActionListener(actionEvent -> new ChangePassword(storage, config));
         deleteUser.addActionListener(actionEvent -> {
-            if (JOptionPane.showConfirmDialog(null, "Do you really want to delete this user\nThis cannot be undone", "Delete user", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to delete this user\nThis cannot be undone", "Delete user", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 if (FileHelper.delete(getStorage().getFile().getAbsoluteFile().getParentFile())) {
                     PassProtect.getInstance().setLoggedIn(false);
                 } else PassProtect.showErrorDialog("Failed to delete user '%s'".formatted(getStorage().getUser()));
@@ -395,7 +400,7 @@ public class Menu extends Panel {
         });
         uninstall.addActionListener(actionEvent -> {
             try {
-                if (JOptionPane.showConfirmDialog(null, "Do you really want to uninstall PassProtect?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to uninstall PassProtect?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     Uninstaller.init(null);
                 }
             } catch (FileNotFoundException e) {
@@ -406,6 +411,7 @@ public class Menu extends Panel {
         aNew.add(category);
         aNew.add(password);
         aNew.add(backupCodes);
+        aNew.add(totpCode);
         aNew.add(newFile);
 
         file.add(aNew);
@@ -475,7 +481,7 @@ public class Menu extends Panel {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void newCategory(@Nonnull Function<String, Category> function) {
-        String name = JOptionPane.showInputDialog("Enter a name");
+        String name = JOptionPane.showInputDialog(PassProtect.getInstance().getWindow(), "Enter a name");
         if (name == null || name.isEmpty()) return;
         CategoryTreeNode node = getSelectedCategory();
         AbstractCollection list = node == null ? storage.getCategories() : node.getEntry();
@@ -484,6 +490,12 @@ public class Menu extends Panel {
             list.add(category);
             update();
         } else PassProtect.showErrorDialog("A category with this name does already exist");
+    }
+
+    @Override
+    public void onFocus() {
+        long l = System.currentTimeMillis() - config.getLastPasswordChange();
+        if (l >= TimeUnit.DAYS.toMillis(30)) new PasswordReminder(storage, config, l);
     }
 
     private void newPassword(@Nonnull TriFunction<String, String, byte[], Password> function) {

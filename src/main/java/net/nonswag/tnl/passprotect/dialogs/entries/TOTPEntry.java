@@ -51,7 +51,7 @@ public class TOTPEntry extends JDialog {
         setPreferredSize(new Dimension(360, 210));
         setMinimumSize(getPreferredSize());
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);

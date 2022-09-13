@@ -1,6 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs.entries;
 
 import net.nonswag.tnl.core.api.file.formats.TextFile;
+import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.entry.File;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
@@ -48,7 +49,7 @@ public class FileEntry extends JDialog {
         setPreferredSize(new Dimension(360, 360));
         setMinimumSize(getPreferredSize());
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);
@@ -114,7 +115,7 @@ public class FileEntry extends JDialog {
             if (fileChooser.showOpenDialog(FileEntry.this) != JFileChooser.APPROVE_OPTION) return;
             java.io.File file = fileChooser.getSelectedFile();
             new TextFile(file.getAbsoluteFile()).setContent(getContent()).save();
-            JOptionPane.showInternalMessageDialog(null, "Successfully exported " + file.getName(), "Exported", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully exported " + file.getName(), "Exported", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 

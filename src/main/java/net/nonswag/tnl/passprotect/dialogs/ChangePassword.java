@@ -55,12 +55,13 @@ public class ChangePassword extends JDialog {
                                 Config config = Config.getInstance();
                                 if (config != null) {
                                     Storage.setInstance(null);
+                                    config.setLastPasswordChange(System.currentTimeMillis());
                                     config.setHint(hint.isEmpty() ? null : hint);
                                     config.save();
                                 }
                                 Config.setInstance(null);
                                 PassProtect.getInstance().setLoggedIn(false);
-                                JOptionPane.showInternalMessageDialog(null, "Changed your password", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Changed your password", "Success", JOptionPane.INFORMATION_MESSAGE);
                                 return true;
                             } catch (Exception e) {
                                 PassProtect.showErrorDialog("Failed to change your password", e);
@@ -99,7 +100,7 @@ public class ChangePassword extends JDialog {
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);

@@ -58,7 +58,7 @@ public class Launcher extends Panel {
                     try {
                         if (!commandLineShortcutCheckBox.isSelected()) return;
                         if (Shortcut.init() == 0) {
-                            JOptionPane.showMessageDialog(null, "Successfully registered the command shortcut", "Installer", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully registered the command shortcut", "Installer", JOptionPane.INFORMATION_MESSAGE);
                         } else PassProtect.showErrorDialog("Failed to register the command shortcut properly");
                     } finally {
                         Installer.init(false);
@@ -76,7 +76,7 @@ public class Launcher extends Panel {
                 } finally {
                     if (!deepEraseCheckBox.isSelected() || (Uninstaller.deepErase() && installed)) return;
                     if (!installed) {
-                        JOptionPane.showInternalMessageDialog(null, "Successfully uninstalled PassProtect deeply", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect deeply", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
                     } else PassProtect.showErrorDialog("Failed to deeply erase PassProtect's data");
                 }
             } else if (updateRadioButton.isSelected()) {

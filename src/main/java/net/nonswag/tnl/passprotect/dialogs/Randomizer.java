@@ -1,6 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs;
 
 import net.nonswag.tnl.core.utils.StringUtil;
+import net.nonswag.tnl.passprotect.PassProtect;
 
 import javax.annotation.Nonnull;
 import javax.swing.*;
@@ -37,7 +38,7 @@ public class Randomizer extends JDialog {
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);

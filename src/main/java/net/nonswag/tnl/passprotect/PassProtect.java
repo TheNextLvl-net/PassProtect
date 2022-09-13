@@ -48,6 +48,7 @@ public class PassProtect {
     public void init(@Nullable Panel panel) {
         boolean register = PassProtect.retrieveUsers().isEmpty();
         panel = panel != null ? panel : isLoggedIn() ? new Menu() : register ? new Registration() : new Login();
+        JFrame previousWindow = window != null ? window : null;
         if (window != null) window.setVisible(false);
         window = new JFrame(panel.getName());
         window.setContentPane(panel.getPanel());
@@ -56,7 +57,8 @@ public class PassProtect {
         window.setPreferredSize(panel.getPreferredSize());
         window.setMinimumSize(window.getPreferredSize());
         window.pack();
-        window.setLocationRelativeTo(null);
+        window.setLocationRelativeTo(previousWindow);
+        if (previousWindow != null) window.setLocation(previousWindow.getLocation());
         window.setVisible(true);
         if (icon != null) window.setIconImage(icon);
         window.requestFocus(FocusEvent.Cause.ACTIVATION);
@@ -91,7 +93,7 @@ public class PassProtect {
     }
 
     public static void showErrorDialog(@Nonnull String message) {
-        JOptionPane.showInternalMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(getInstance().getWindow(), message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     public static void invalidUser(@Nullable String username) {

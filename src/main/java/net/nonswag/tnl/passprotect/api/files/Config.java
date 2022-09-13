@@ -35,6 +35,8 @@ public class Config extends JsonFile {
     private String hint;
     @Nullable
     private String lastUser;
+    private int passwordChangeReminder;
+    private long lastPasswordChange;
 
     public Config(@Nonnull String username) {
         super(username, "config.json");
@@ -55,6 +57,8 @@ public class Config extends JsonFile {
         if (!font.has("type")) font.addProperty("type", SystemUtil.TYPE.isLinux() ? "Ubuntu" : "Arial");
         if (!font.has("size")) font.addProperty("size", 13);
         if (root.has("hint")) hint = new String(Base64.getDecoder().decode(root.get("hint").getAsString()));
+        this.lastPasswordChange = root.has("last-password-change") ? root.get("last-password-change").getAsLong() : System.currentTimeMillis();
+        this.passwordChangeReminder = root.has("password-change-reminder") ? root.get("password-change-reminder").getAsInt() : Reminder.MONTHLY;
         this.font = new Font(font.get("type").getAsString(), Font.PLAIN, font.get("size").getAsInt());
         this.lastUser = root.has("last-user") ? root.get("last-user").getAsString() : null;
         this.appearance = parse(root.get("appearance").getAsString());
@@ -69,8 +73,11 @@ public class Config extends JsonFile {
         font.addProperty("size", this.font.getSize());
         root.add("font", font);
         root.addProperty("appearance", this.appearance.getClassName());
-        if (hint != null) root.addProperty("hint", Base64.getEncoder().encodeToString(hint.getBytes(getCharset())));
-        if (lastUser != null) root.addProperty("last-user", lastUser);
+        if (!equals(APP) && hint != null)
+            root.addProperty("hint", Base64.getEncoder().encodeToString(hint.getBytes(getCharset())));
+        if (equals(APP) && lastUser != null) root.addProperty("last-user", lastUser);
+        if (!equals(APP)) root.addProperty("last-password-change", lastPasswordChange);
+        if (!equals(APP)) root.addProperty("password-change-reminder", passwordChangeReminder);
         setJsonElement(root);
         super.save();
     }
@@ -90,5 +97,11 @@ public class Config extends JsonFile {
                 ", appearance=" + appearance +
                 ", hint='" + hint + '\'' +
                 '}';
+    }
+
+    public static class Reminder {
+        private static final int NEVER = 0;
+        private static final int MONTHLY = 1;
+        private static final int YEARLY = 2;
     }
 }

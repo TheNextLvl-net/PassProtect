@@ -1,6 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs.entries;
 
 import net.nonswag.tnl.core.api.object.Getter;
+import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.entry.BackupCode;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
@@ -46,7 +47,7 @@ public class BackupCodeEntry extends JDialog {
         setPreferredSize(new Dimension(360, 210));
         setResizable(false);
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);

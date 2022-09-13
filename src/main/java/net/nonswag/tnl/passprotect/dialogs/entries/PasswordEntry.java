@@ -1,6 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs.entries;
 
 import net.nonswag.tnl.core.api.object.Pair;
+import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.entry.Password;
 import net.nonswag.tnl.passprotect.api.fields.PasswordField;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
@@ -59,7 +60,7 @@ public class PasswordEntry extends JDialog {
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);

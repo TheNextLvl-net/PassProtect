@@ -76,7 +76,6 @@ public class Device {
     @Nonnull
     public Status getBatteryStatus() throws AdbException {
         String[] level = ADB.execute("adb shell dumpsys battery | grep status").get(0).split(" ");
-        System.out.println(ADB.execute("adb shell dumpsys battery | grep status"));
         return Status.valueOf(Integer.parseInt(level[level.length - 1]));
     }
 

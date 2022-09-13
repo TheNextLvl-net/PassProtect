@@ -19,7 +19,7 @@ public class Installer {
         if (Launcher.getFile() == null) throw new FileNotFoundException("Installation file not found");
         String home = System.getProperty("user.home");
         boolean root = "root".equals(System.getenv("USER"));
-        if (!update && root && JOptionPane.showConfirmDialog(null, "Installing PassProtect as root is not recommended\n" +
+        if (!update && root && JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Installing PassProtect as root is not recommended\n" +
                         "Do you really want to continue as root?",
                 "Warning", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) System.exit(1);
         File destination = new File(home, ".pass-protect");
@@ -34,15 +34,15 @@ public class Installer {
                 PassProtect.showErrorDialog("Failed to copy resource file", e);
             }
             if (!update) {
-                if (JOptionPane.showConfirmDialog(null, "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     createDesktopEntry("%s/Desktop".formatted(home), destination.getAbsolutePath());
                 }
-                if (JOptionPane.showConfirmDialog(null, "Create activities entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+                if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create activities entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
                     createDesktopEntry("%s/.local/share/applications".formatted(home), destination.getAbsolutePath());
                 }
-                JOptionPane.showInternalMessageDialog(null, "Successfully installed PassProtect", "Installer", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed PassProtect", "Installer", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showInternalMessageDialog(null, "Successfully updated PassProtect", "Updated", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully updated PassProtect", "Updated", JOptionPane.INFORMATION_MESSAGE);
             }
             System.exit(0);
         } catch (Exception e) {
