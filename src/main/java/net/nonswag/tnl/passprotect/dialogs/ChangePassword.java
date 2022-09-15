@@ -61,7 +61,7 @@ public class ChangePassword extends JDialog {
                                 }
                                 Config.setInstance(null);
                                 PassProtect.getInstance().setLoggedIn(false);
-                                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Changed your password", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Changed your password", "Success", JOptionPane.INFORMATION_MESSAGE);
                                 return true;
                             } catch (Exception e) {
                                 PassProtect.showErrorDialog("Failed to change your password", e);

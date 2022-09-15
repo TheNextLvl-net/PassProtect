@@ -115,7 +115,7 @@ public class FileEntry extends JDialog {
             if (fileChooser.showOpenDialog(FileEntry.this) != JFileChooser.APPROVE_OPTION) return;
             java.io.File file = fileChooser.getSelectedFile();
             new TextFile(file.getAbsoluteFile()).setContent(getContent()).save();
-            JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully exported " + file.getName(), "Exported", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully exported " + file.getName(), "Exported", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 

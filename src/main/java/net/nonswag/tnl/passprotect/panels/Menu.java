@@ -16,6 +16,7 @@ import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
 import net.nonswag.tnl.passprotect.dialogs.ActiveDialogs;
 import net.nonswag.tnl.passprotect.dialogs.ChangePassword;
 import net.nonswag.tnl.passprotect.dialogs.PasswordReminder;
+import net.nonswag.tnl.passprotect.dialogs.Settings;
 import net.nonswag.tnl.passprotect.dialogs.entries.BackupCodeEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.FileEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.PasswordEntry;
@@ -54,7 +55,7 @@ public class Menu extends Panel {
     @Nonnull
     private JPopupMenu actionMenu;
     @Nonnull
-    private JButton newCategory;
+    private JButton newCategory, saveButton, preferences;
     @Nonnull
     private JTextField searchBar;
 
@@ -122,6 +123,8 @@ public class Menu extends Panel {
     }
 
     private void registerListeners() {
+        preferences.addActionListener(actionEvent -> new Settings(config));
+        saveButton.addActionListener(actionEvent -> save());
         panel.registerKeyboardAction(actionEvent -> this.searchBar.requestFocus(),
                 KeyStroke.getKeyStroke("control F"), JComponent.WHEN_IN_FOCUSED_WINDOW);
         categories.addTreeExpansionListener(new TreeExpansionListener() {
@@ -340,15 +343,7 @@ public class Menu extends Panel {
             });
             appearance.add(item);
         }
-        saveAll.addActionListener(actionEvent -> {
-            try {
-                storage.save();
-                config.save();
-                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Saved all changes", "Saved", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                failedToSave(e);
-            }
-        });
+        saveAll.addActionListener(actionEvent -> save());
         reloadAll.addActionListener(actionEvent -> {
             if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Changes you made may not be saved", "Reload All from Disk", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
                 try {
@@ -433,6 +428,16 @@ public class Menu extends Panel {
         menu.add(file);
         menu.add(selection);
         menu.add(settings);
+    }
+
+    private void save() {
+        try {
+            storage.save();
+            config.save();
+            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Saved all changes", "Saved", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            failedToSave(e);
+        }
     }
 
     private void update() {

@@ -76,7 +76,7 @@ public class Launcher extends Panel {
                 } finally {
                     if (!deepEraseCheckBox.isSelected() || (Uninstaller.deepErase() && installed)) return;
                     if (!installed) {
-                        JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect deeply", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect deeply", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
                     } else PassProtect.showErrorDialog("Failed to deeply erase PassProtect's data");
                 }
             } else if (updateRadioButton.isSelected()) {

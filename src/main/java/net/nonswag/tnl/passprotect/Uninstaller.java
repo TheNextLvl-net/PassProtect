@@ -23,7 +23,7 @@ public class Uninstaller {
         } else if (eraseData && !FileHelper.delete(location)) success = false;
         if (!FileHelper.delete(new File(new File(home, "/Desktop"), "pass-protect.desktop"))) success = false;
         if (success) {
-            JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully uninstalled PassProtect", "Uninstaller", JOptionPane.INFORMATION_MESSAGE);
         } else PassProtect.showErrorDialog("Could not uninstall PassProtect properly");
         System.exit(success ? 0 : 1);
     }

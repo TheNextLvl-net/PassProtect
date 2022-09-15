@@ -40,9 +40,9 @@ public class Installer {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create activities entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
                     createDesktopEntry("%s/.local/share/applications".formatted(home), destination.getAbsolutePath());
                 }
-                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed PassProtect", "Installer", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed PassProtect", "Installer", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showInternalMessageDialog(PassProtect.getInstance().getWindow(), "Successfully updated PassProtect", "Updated", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully updated PassProtect", "Updated", JOptionPane.INFORMATION_MESSAGE);
             }
             System.exit(0);
         } catch (Exception e) {
