@@ -5,7 +5,6 @@ import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;
@@ -21,17 +20,6 @@ public class PasswordReminder extends JDialog {
     private JButton yesButton, notNow;
     @Nonnull
     private JLabel line1, line2, line3, line4;
-
-    private void createUIComponents() {
-        Config config = Config.getInstance();
-    }
-
-    @Nullable
-    private final CloseEvent closeEvent = type -> {
-        Storage storage = Storage.getInstance();
-        if (storage == null || !type.isConfirm()) return true;
-        return false;
-    };
 
     public PasswordReminder(@Nonnull Storage storage, @Nonnull Config config, long l) {
         super(PassProtect.getInstance().getWindow(), "Security reminder");
@@ -58,13 +46,15 @@ public class PasswordReminder extends JDialog {
     }
 
     private void close(@Nonnull CloseEvent.Type type) {
-        boolean close = true;
-        if (closeEvent != null) close = closeEvent.close(type);
-        if (close) dispose();
+        dispose();
+        if (!type.isConfirm()) return;
+        Storage storage = Storage.getInstance();
+        Config config = Config.getInstance();
+        if (storage == null || config == null) return;
+        new Thread(() -> new ChangePassword(storage, config), "change-password").start();
     }
 
     private interface CloseEvent {
-        boolean close(@Nonnull CloseEvent.Type type);
 
         enum Type {
             CLOSE, CANCEL, CONFIRM;
