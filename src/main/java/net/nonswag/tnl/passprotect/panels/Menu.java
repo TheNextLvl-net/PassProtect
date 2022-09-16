@@ -1,12 +1,8 @@
 package net.nonswag.tnl.passprotect.panels;
 
 import lombok.Getter;
-import net.nonswag.tnl.core.api.file.helper.FileHelper;
 import net.nonswag.tnl.core.api.object.TriFunction;
-import net.nonswag.tnl.core.utils.LinuxUtil;
-import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
-import net.nonswag.tnl.passprotect.Uninstaller;
 import net.nonswag.tnl.passprotect.api.entry.*;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
@@ -14,9 +10,8 @@ import net.nonswag.tnl.passprotect.api.files.Storage;
 import net.nonswag.tnl.passprotect.api.nodes.*;
 import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
 import net.nonswag.tnl.passprotect.dialogs.ActiveDialogs;
-import net.nonswag.tnl.passprotect.dialogs.ChangePassword;
 import net.nonswag.tnl.passprotect.dialogs.PasswordReminder;
-import net.nonswag.tnl.passprotect.dialogs.Settings;
+import net.nonswag.tnl.passprotect.dialogs.Preferences;
 import net.nonswag.tnl.passprotect.dialogs.entries.BackupCodeEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.FileEntry;
 import net.nonswag.tnl.passprotect.dialogs.entries.PasswordEntry;
@@ -34,8 +29,6 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +116,7 @@ public class Menu extends Panel {
     }
 
     private void registerListeners() {
-        preferences.addActionListener(actionEvent -> new Settings(config));
+        preferences.addActionListener(actionEvent -> new Preferences(config, storage));
         saveButton.addActionListener(actionEvent -> save());
         panel.registerKeyboardAction(actionEvent -> this.searchBar.requestFocus(),
                 KeyStroke.getKeyStroke("control F"), JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -282,8 +275,6 @@ public class Menu extends Panel {
         JMenu file = new JMenu("File");
         JMenu aNew = new JMenu("New");
         JMenu selection = new JMenu("Selection");
-        JMenu settings = new JMenu("Settings");
-        JMenu appearance = new JMenu("Appearance");
 
         JMenuItem logout = new JMenuItem("Logout", KeyEvent.VK_L);
         JMenuItem exit = new JMenuItem("Exit", KeyEvent.VK_X);
@@ -297,18 +288,9 @@ public class Menu extends Panel {
         JMenuItem delete = new JMenuItem("Delete", KeyEvent.VK_D);
         JMenuItem rename = new JMenuItem("Rename", KeyEvent.VK_R);
         JMenuItem clear = new JMenuItem("Clear", KeyEvent.VK_C);
-        JMenuItem changePassword = new JMenuItem("Change Password", KeyEvent.VK_C);
-        JMenuItem deleteUser = new JMenuItem("Delete User", KeyEvent.VK_D);
-        JMenuItem install = new JMenuItem("Install PassProtect", KeyEvent.VK_I);
-        JMenuItem uninstall = new JMenuItem("Uninstall PassProtect", KeyEvent.VK_U);
-
-        install.setEnabled(!PassProtect.isInstalled() && Launcher.getFile() != null);
-        uninstall.setEnabled(PassProtect.isInstalled());
 
         file.setMnemonic(KeyEvent.VK_F);
         selection.setMnemonic(KeyEvent.VK_E);
-        settings.setMnemonic(KeyEvent.VK_S);
-        appearance.setMnemonic(KeyEvent.VK_A);
         aNew.setMnemonic(KeyEvent.VK_N);
 
         saveAll.setAccelerator(KeyStroke.getKeyStroke("control S"));
@@ -333,16 +315,6 @@ public class Menu extends Panel {
             else Toolkit.getDefaultToolkit().beep();
         });
         rename.addActionListener(actionEvent -> renameAction.run());
-        for (UIManager.LookAndFeelInfo theme : Launcher.getLookAndFeels()) {
-            JMenuItem item = new JMenuItem(theme.getName());
-            item.setEnabled(!UIManager.getLookAndFeel().getClass().getName().equals(theme.getClassName()));
-            item.addActionListener(actionEvent -> {
-                config.setAppearance(theme);
-                Launcher.applyAppearance(config);
-                PassProtect.getInstance().setLoggedIn(true);
-            });
-            appearance.add(item);
-        }
         saveAll.addActionListener(actionEvent -> save());
         reloadAll.addActionListener(actionEvent -> {
             if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Changes you made may not be saved", "Reload All from Disk", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) == 0) {
@@ -374,34 +346,6 @@ public class Menu extends Panel {
             }
         });
         delete.addActionListener(actionEvent -> deleteAction.run());
-        changePassword.addActionListener(actionEvent -> new ChangePassword(storage, config));
-        deleteUser.addActionListener(actionEvent -> {
-            if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to delete this user\nThis cannot be undone", "Delete user", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                if (FileHelper.delete(getStorage().getFile().getAbsoluteFile().getParentFile())) {
-                    PassProtect.getInstance().setLoggedIn(false);
-                } else PassProtect.showErrorDialog("Failed to delete user '%s'".formatted(getStorage().getUser()));
-            }
-        });
-        install.addActionListener(actionEvent -> {
-            java.io.File installer = Launcher.getFile();
-            if (installer != null) {
-                try {
-                    PassProtect.setInstalled(LinuxUtil.runShellCommand("java -jar " + installer.getAbsolutePath() + " install") == 0);
-                    install.setEnabled(!PassProtect.isInstalled());
-                } catch (IOException | InterruptedException e) {
-                    PassProtect.showErrorDialog("Failed to install PassProtect", e);
-                }
-            } else PassProtect.showErrorDialog("Found no installation file");
-        });
-        uninstall.addActionListener(actionEvent -> {
-            try {
-                if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to uninstall PassProtect?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                    Uninstaller.init(null);
-                }
-            } catch (FileNotFoundException e) {
-                PassProtect.showErrorDialog("Failed to uninstall PassProtect", e);
-            }
-        });
 
         aNew.add(category);
         aNew.add(password);
@@ -419,15 +363,8 @@ public class Menu extends Panel {
         selection.add(rename);
         selection.add(clear);
 
-        settings.add(changePassword);
-        settings.add(deleteUser);
-        settings.add(install);
-        settings.add(uninstall);
-        settings.add(appearance);
-
         menu.add(file);
         menu.add(selection);
-        menu.add(settings);
     }
 
     private void save() {
@@ -443,6 +380,7 @@ public class Menu extends Panel {
     private void update() {
         if (!PassProtect.getInstance().isLoggedIn()) return;
         newCategory.setVisible(storage.getCategories().isEmpty());
+        searchBar.setEnabled(!newCategory.isVisible());
         List<Integer> rows = new ArrayList<>();
         for (int i = 0; i < categories.getRowCount(); i++) if (categories.isExpanded(i)) rows.add(i);
         DefaultMutableTreeNode categories = new DefaultMutableTreeNode();

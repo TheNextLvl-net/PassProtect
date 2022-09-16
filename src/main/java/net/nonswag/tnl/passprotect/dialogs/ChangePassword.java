@@ -101,6 +101,7 @@ public class ChangePassword extends JDialog {
         setPreferredSize(new Dimension(360, 180));
         pack();
         setLocationRelativeTo(PassProtect.getInstance().getWindow());
+        setModal(true);
         setVisible(true);
         setAlwaysOnTop(true);
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);
