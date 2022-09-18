@@ -20,9 +20,9 @@ import java.io.IOException;
 public class Preferences extends JDialog {
 
     @Nonnull
-    private JPanel panel, general, appearance;
+    private JPanel panel, general, appearance, trustedDevices;
     @Nonnull
-    private JScrollPane appearanceScrollBar;
+    private JScrollPane appearanceScrollBar, trustedDevicesScrollBar;
     @Nonnull
     private JButton changePassword, deleteUser, install, uninstall;
 
@@ -80,6 +80,7 @@ public class Preferences extends JDialog {
                 } else PassProtect.showErrorDialog("Failed to delete user '%s'".formatted(storage.getUser()));
             }
         });
+        trustedDevicesScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         appearanceScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         for (int index = 0; index < Launcher.getLookAndFeels().size(); index++) {
             UIManager.LookAndFeelInfo theme = Launcher.getLookAndFeels().get(index);

@@ -1,3 +1,5 @@
+package net.nonswag.tnl.adb;
+
 import javax.annotation.Nonnull;
 
 public class AdbException extends Exception {

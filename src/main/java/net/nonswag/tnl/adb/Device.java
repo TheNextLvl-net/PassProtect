@@ -1,4 +1,7 @@
+package net.nonswag.tnl.adb;
+
 import lombok.Getter;
+import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.math.Range;
 
 import javax.annotation.Nonnull;
@@ -10,32 +13,69 @@ import java.util.List;
 public class Device {
 
     @Nonnull
-    private final String serialNumber, model;
+    private final String serialNumber;
     @Nullable
-    private String macAddress, version;
+    private final String macAddress, ipAddress, version, fingerprint, model, status;
 
-    public Device(@Nonnull String serialNumber, @Nonnull String model) {
+    public Device(@Nonnull String serialNumber, @Nullable String status) throws AdbException {
         this.serialNumber = serialNumber;
-        this.model = model;
+        this.status = status;
+        this.macAddress = retrieveMacAddress();
+        this.ipAddress = retrieveIPAddress();
+        this.fingerprint = retrieveFingerprint();
+        this.version = retrieveVersion();
+        this.model = retrieveModel();
     }
 
     @Nullable
-    public String getMacAddress() throws AdbException {
-        if (macAddress != null) return macAddress;
-        List<String> callback = ADB.execute("adb shell ip addr show wlan0 | grep 'link/ether '| cut -d' ' -f6");
-        return callback.isEmpty() ? null : (macAddress = callback.get(0));
+    private String retrieveMacAddress() throws AdbException {
+        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'link/ether '| cut -d' ' -f6");
+        return callback.isEmpty() ? null : callback.get(0);
     }
 
     @Nullable
-    public String getVersion() throws AdbException {
-        if (version != null) return version;
-        List<String> callback = ADB.execute("adb shell getprop ro.build.version.release");
-        return callback.isEmpty() ? null : (version = callback.get(0));
+    private String retrieveIPAddress() throws AdbException {
+        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'inet '| cut -d' ' -f6");
+        return callback.isEmpty() ? null : callback.get(0).split("/")[0];
+    }
+
+    @Nullable
+    private String retrieveFingerprint() throws AdbException {
+        List<String> callback = runShellCommand("getprop ro.build.fingerprint");
+        return callback.isEmpty() ? null : callback.get(0);
+    }
+
+    @Nullable
+    private String retrieveModel() throws AdbException {
+        List<String> callback = runShellCommand("getprop ro.product.model");
+        return callback.isEmpty() ? null : callback.get(0);
+    }
+
+    @Nullable
+    private String retrieveVersion() throws AdbException {
+        List<String> callback = runShellCommand("getprop ro.build.version.release");
+        return callback.isEmpty() ? null : callback.get(0);
+    }
+
+    public void connectTCP(int port, int code) throws AdbException {
+        Logger.debug.println(runCommand("connect %s:%s %s".formatted(getIpAddress(), port, code)));
+    }
+
+    public void connectTCP(int port) throws AdbException {
+        Logger.debug.println(runCommand("connect %s:%s".formatted(getIpAddress(), port)));
+    }
+
+    public void connectTCP(long code) throws AdbException {
+        Logger.debug.println(runCommand("connect %s %s".formatted(getIpAddress(), code)));
+    }
+
+    public void connectTCP() throws AdbException {
+        Logger.debug.println(runCommand("connect %s".formatted(getIpAddress())));
     }
 
     @Nonnull
     public List<String> listFiles(@Nonnull File workingDirectory) throws AdbException {
-        return ADB.execute("adb shell ls %s".formatted(workingDirectory.getPath()));
+        return runShellCommand("ls %s".formatted(workingDirectory.getPath()));
     }
 
     @Nonnull
@@ -44,104 +84,122 @@ public class Device {
     }
 
     public void mkdir(@Nonnull File file) throws AdbException {
-        ADB.execute("adb shell mkdir %s".formatted(file.getPath()));
+        runShellCommand("mkdir %s".formatted(file.getPath()));
     }
 
     public void rm(@Nonnull File file) throws AdbException {
-        ADB.execute("adb shell rm %s".formatted(file.getPath()));
+        runShellCommand("rm %s".formatted(file.getPath()));
     }
 
     public void rmDir(@Nonnull File file) throws AdbException {
-        ADB.execute("adb shell rm -r %s".formatted(file.getPath()));
+        runShellCommand("rm -r %s".formatted(file.getPath()));
     }
 
     public void push(@Nonnull File source, @Nonnull File destination) throws AdbException {
-        ADB.execute("adb push %s %s".formatted(source.getAbsolutePath(), destination.getPath()));
+        runCommand("push %s %s".formatted(source.getAbsolutePath(), destination.getPath()));
     }
 
     public void pull(@Nonnull File source, @Nonnull File destination) throws AdbException {
-        ADB.execute("adb pull %s %s".formatted(source.getAbsolutePath(), destination.getPath()));
+        runCommand("pull %s %s".formatted(source.getAbsolutePath(), destination.getPath()));
     }
 
     public void setBatteryLevel(@Range(from = 0, to = 100) int battery) throws AdbException {
-        ADB.execute("adb shell dumpsys battery set level %s".formatted(battery));
+        runShellCommand("dumpsys battery set level %s".formatted(battery));
     }
 
     @Range(from = 0, to = 100)
     public int getBatteryLevel() throws AdbException {
-        String[] level = ADB.execute("adb shell dumpsys battery | grep level").get(0).split(" ");
+        List<String> callback = runShellCommand("dumpsys battery | grep level");
+        if (callback.isEmpty()) throw new AdbException("Battery information not found");
+        String[] level = callback.get(0).split(" ");
         return Integer.parseInt(level[level.length - 1]);
     }
 
     @Nonnull
     public Status getBatteryStatus() throws AdbException {
-        String[] level = ADB.execute("adb shell dumpsys battery | grep status").get(0).split(" ");
+        List<String> callback = runShellCommand("dumpsys battery | grep status");
+        if (callback.isEmpty()) throw new AdbException("Battery information not found");
+        String[] level = callback.get(0).split(" ");
         return Status.valueOf(Integer.parseInt(level[level.length - 1]));
     }
 
     public void setBatteryStatus(@Nonnull Status status) throws AdbException {
-        ADB.execute("adb shell dumpsys battery set status %s".formatted(status.getId()));
+        runShellCommand("dumpsys battery set status %s".formatted(status.getId()));
     }
 
     public void resetBattery() throws AdbException {
-        ADB.execute("adb shell dumpsys battery reset");
+        runShellCommand("dumpsys battery reset");
     }
 
     public void gallery() throws AdbException {
-        ADB.execute("adb shell am start -t image/* -a android.intent.action.VIEW");
+        runShellCommand("am start -t image/* -a android.intent.action.VIEW");
     }
 
     public void browse(@Nonnull String url) throws AdbException {
-        ADB.execute("adb shell am start -a android.intent.action.VIEW -d %s".formatted(url));
+        runShellCommand("am start -a android.intent.action.VIEW -d %s".formatted(url));
     }
 
     public void call(@Nonnull String number) throws AdbException {
-        ADB.execute("adb shell am start -a android.intent.action.CALL -d tel:%s".formatted(number));
+        runShellCommand("am start -a android.intent.action.CALL -d tel:%s".formatted(number));
     }
 
     public void sms(@Nonnull String number) throws AdbException {
-        ADB.execute("adb shell am start -a android.intent.action.SENDTO -d sms:%s".formatted(number));
+        runShellCommand("am start -a android.intent.action.SENDTO -d sms:%s".formatted(number));
     }
 
     public void setResolution(int width, int height) throws AdbException {
-        ADB.execute("adb shell wm size %sx%s".formatted(width, height));
+        runShellCommand("wm size %sx%s".formatted(width, height));
     }
 
     public void resetResolution() throws AdbException {
-        ADB.execute("adb shell wm size reset");
+        runShellCommand("wm size reset");
     }
 
     @Nonnull
     public String getResolution() throws AdbException {
-        String[] resolution = ADB.execute("adb shell wm size").get(0).split(" ");
+        List<String> callback = runShellCommand("wm size");
+        if (callback.isEmpty()) throw new AdbException("Resolution information not found");
+        String[] resolution = callback.get(0).split(" ");
         return resolution[resolution.length - 1];
     }
 
     public void setDensity(int density) throws AdbException {
-        ADB.execute("adb shell wm density %s".formatted(density));
+        runShellCommand("wm density %s".formatted(density));
     }
 
     public void resetDensity() throws AdbException {
-        ADB.execute("adb shell wm density reset");
+        runShellCommand("wm density reset");
     }
 
     public int getDensity() throws AdbException {
-        String[] density = ADB.execute("adb shell wm density").get(0).split(" ");
+        List<String> callback = runShellCommand("wm density");
+        if (callback.isEmpty()) throw new AdbException("Density information not found");
+        String[] density = callback.get(0).split(" ");
         return Integer.parseInt(density[density.length - 1]);
     }
 
     public void inputText(@Nonnull String text) throws AdbException {
-        ADB.execute("adb shell input text '%s'".formatted(text));
+        runShellCommand("input text '%s'".formatted(text));
     }
 
     public void keyEvent(@Nonnull KeyCode keyCode) throws AdbException {
-        ADB.execute("adb shell input keyevent %s".formatted(keyCode.getId()));
+        runShellCommand("input keyevent %s".formatted(keyCode.getId()));
     }
 
     public void reboot(@Nonnull State state) throws AdbException {
-        List<String> callback = ADB.execute("adb %s".formatted(state.getCommand()));
+        List<String> callback = runCommand(state.getCommand());
         if (callback.isEmpty()) return;
         throw new AdbException("Failed to reboot (mode %s): %s".formatted(state, callback.get(0)));
+    }
+
+    @Nonnull
+    public List<String> runCommand(@Nonnull String command) throws AdbException {
+        return ADB.execute("-s %s %s".formatted(getSerialNumber(), command));
+    }
+
+    @Nonnull
+    public List<String> runShellCommand(@Nonnull String command) throws AdbException {
+        return runCommand("shell ".concat(command));
     }
 
     @Getter
