@@ -1,7 +1,10 @@
 package net.nonswag.tnl.passprotect.dialogs;
 
+import net.nonswag.tnl.adb.ADB;
+import net.nonswag.tnl.adb.DeviceReference;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
 import net.nonswag.tnl.core.utils.LinuxUtil;
+import net.nonswag.tnl.core.utils.SystemUtil;
 import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.Uninstaller;
@@ -16,6 +19,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Preferences extends JDialog {
 
@@ -25,6 +30,8 @@ public class Preferences extends JDialog {
     private JScrollPane appearanceScrollBar, trustedDevicesScrollBar;
     @Nonnull
     private JButton changePassword, deleteUser, install, uninstall;
+    @Nonnull
+    private JTabbedPane tab;
 
     public Preferences(@Nonnull Config config, @Nonnull Storage storage) {
         super(PassProtect.getInstance().getWindow(), "Preferences");
@@ -81,6 +88,25 @@ public class Preferences extends JDialog {
             }
         });
         trustedDevicesScrollBar.getVerticalScrollBar().setUnitIncrement(15);
+        if (SystemUtil.TYPE.isLinux()) try {
+            List<DeviceReference> devices = new ArrayList<>();
+            ADB.getDevices().forEach(device -> devices.add(new DeviceReference(device.getModel(), device.getSerialNumber())));
+            devices.addAll(storage.getTrustedDevices());
+            devices.forEach(device -> {
+                trustedDevices.add(new JButton(storage.getTrustedDevices().contains(device) ? device.model() : "Trust ".concat(device.model())));
+            });
+            if (trustedDevices.getComponents().length == 0) {
+                JLabel label = new JLabel("Connect your phone via usb to your computer");
+                label.setToolTipText("Android required");
+                trustedDevices.add(label);
+            }
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Cannot run program")) {
+                trustedDevices.add(new JLabel("To use this feature you have to install ADB"));
+            } else if (e.getMessage() != null) trustedDevices.add(new JLabel(e.getMessage()));
+            else trustedDevices.add(new JLabel("Something went wrong"));
+        }
+        else tab.setEnabledAt(2, false);
         appearanceScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         for (int index = 0; index < Launcher.getLookAndFeels().size(); index++) {
             UIManager.LookAndFeelInfo theme = Launcher.getLookAndFeels().get(index);
@@ -98,6 +124,7 @@ public class Preferences extends JDialog {
     }
 
     private void createUIComponents() {
+        trustedDevices = new JPanel(new GridLayout(5, 1));
         appearance = new JPanel(new GridLayout(Launcher.getLookAndFeels().size(), 1));
     }
 }

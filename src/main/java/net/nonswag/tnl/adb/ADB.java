@@ -31,7 +31,7 @@ public class ADB {
                     if (split.isEmpty()) return;
                     devices.add(new Device(split.get(0), split.size() >= 2 ? split.get(1) : null));
                 } catch (AdbException e) {
-                    Logger.error.println(e);
+                    Logger.error.println("Failed to read device information: " + s, e);
                 }
             });
         } catch (Exception e) {

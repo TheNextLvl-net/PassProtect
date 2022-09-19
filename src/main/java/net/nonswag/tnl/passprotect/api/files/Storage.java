@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
+import net.nonswag.tnl.adb.DeviceReference;
 import net.nonswag.tnl.core.api.errors.file.FileSaveException;
 import net.nonswag.tnl.core.api.file.formats.TextFile;
 import net.nonswag.tnl.core.api.file.helper.JsonHelper;
@@ -41,6 +42,9 @@ public class Storage extends TextFile {
     @Getter
     @Nonnull
     private final TreeSet<Category> categories = new TreeSet<>();
+    @Getter
+    @Nonnull
+    private final List<DeviceReference> trustedDevices = new ArrayList<>();
 
     public Storage(@Nonnull String user, @Nonnull byte[] securityKey) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         super(user, "saves.pp");

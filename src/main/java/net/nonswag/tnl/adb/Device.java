@@ -14,8 +14,10 @@ public class Device {
 
     @Nonnull
     private final String serialNumber;
+    @Nonnull
+    private final String macAddress, ipAddress, version, fingerprint, model;
     @Nullable
-    private final String macAddress, ipAddress, version, fingerprint, model, status;
+    private final String status;
 
     public Device(@Nonnull String serialNumber, @Nullable String status) throws AdbException {
         this.serialNumber = serialNumber;
@@ -27,34 +29,39 @@ public class Device {
         this.model = retrieveModel();
     }
 
-    @Nullable
+    @Nonnull
     private String retrieveMacAddress() throws AdbException {
         List<String> callback = runShellCommand("ip addr show wlan0 | grep 'link/ether '| cut -d' ' -f6");
-        return callback.isEmpty() ? null : callback.get(0);
+        if (callback.isEmpty()) throw new AdbException("WLAN information not found");
+        return callback.get(0);
     }
 
-    @Nullable
+    @Nonnull
     private String retrieveIPAddress() throws AdbException {
         List<String> callback = runShellCommand("ip addr show wlan0 | grep 'inet '| cut -d' ' -f6");
-        return callback.isEmpty() ? null : callback.get(0).split("/")[0];
+        if (callback.isEmpty()) throw new AdbException("WLAN information not found");
+        return callback.get(0).split("/")[0];
     }
 
-    @Nullable
+    @Nonnull
     private String retrieveFingerprint() throws AdbException {
         List<String> callback = runShellCommand("getprop ro.build.fingerprint");
-        return callback.isEmpty() ? null : callback.get(0);
+        if (callback.isEmpty()) throw new AdbException("Property information not found");
+        return callback.get(0);
     }
 
-    @Nullable
+    @Nonnull
     private String retrieveModel() throws AdbException {
         List<String> callback = runShellCommand("getprop ro.product.model");
-        return callback.isEmpty() ? null : callback.get(0);
+        if (callback.isEmpty()) throw new AdbException("Property information not found");
+        return callback.get(0);
     }
 
-    @Nullable
+    @Nonnull
     private String retrieveVersion() throws AdbException {
         List<String> callback = runShellCommand("getprop ro.build.version.release");
-        return callback.isEmpty() ? null : callback.get(0);
+        if (callback.isEmpty()) throw new AdbException("Property information not found");
+        return callback.get(0);
     }
 
     public void connectTCP(int port, int code) throws AdbException {
