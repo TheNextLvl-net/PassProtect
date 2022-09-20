@@ -116,7 +116,7 @@ public class Menu extends Panel {
     }
 
     private void registerListeners() {
-        preferences.addActionListener(actionEvent -> new Preferences(config, storage));
+        preferences.addActionListener(actionEvent -> new Preferences(config, storage, 0));
         saveButton.addActionListener(actionEvent -> save());
         panel.registerKeyboardAction(actionEvent -> this.searchBar.requestFocus(),
                 KeyStroke.getKeyStroke("control F"), JComponent.WHEN_IN_FOCUSED_WINDOW);

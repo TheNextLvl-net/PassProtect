@@ -25,15 +25,17 @@ import java.util.List;
 public class Preferences extends JDialog {
 
     @Nonnull
+    private JTabbedPane tab;
+    @Nonnull
     private JPanel panel, general, appearance, trustedDevices;
+    @Nonnull
+    private JPanel trustedDevicesPanel;
     @Nonnull
     private JScrollPane appearanceScrollBar, trustedDevicesScrollBar;
     @Nonnull
     private JButton changePassword, deleteUser, install, uninstall;
-    @Nonnull
-    private JTabbedPane tab;
 
-    public Preferences(@Nonnull Config config, @Nonnull Storage storage) {
+    public Preferences(@Nonnull Config config, @Nonnull Storage storage, int tab) {
         super(PassProtect.getInstance().getWindow(), "Preferences");
         setModal(true);
         setContentPane(panel);
@@ -49,6 +51,7 @@ public class Preferences extends JDialog {
         pack();
         setLocationRelativeTo(PassProtect.getInstance().getWindow());
         setupWindow(config, storage);
+        this.tab.setSelectedIndex(tab);
         setVisible(true);
         setAlwaysOnTop(true);
     }
@@ -90,12 +93,26 @@ public class Preferences extends JDialog {
         trustedDevicesScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         if (SystemUtil.TYPE.isLinux()) try {
             List<DeviceReference> devices = new ArrayList<>();
-            ADB.getDevices().forEach(device -> devices.add(new DeviceReference(device.getModel(), device.getSerialNumber())));
-            devices.addAll(storage.getTrustedDevices());
-            devices.forEach(device -> {
-                trustedDevices.add(new JButton(storage.getTrustedDevices().contains(device) ? device.model() : "Trust ".concat(device.model())));
+            ADB.getDevices().forEach(device -> {
+                DeviceReference reference = new DeviceReference(device.getModel(), device.getSerialNumber());
+                if (!storage.getTrustedDevices().contains(reference)) devices.add(reference);
             });
-            if (trustedDevices.getComponents().length == 0) {
+            storage.getTrustedDevices().forEach(device -> {
+                JButton button = new JButton(device.model());
+                button.addActionListener(actionEvent -> new DeviceInformation(this, device, config, storage));
+                trustedDevices.add(button);
+            });
+            if (!storage.getTrustedDevices().isEmpty() && !devices.isEmpty()) trustedDevices.add(new JSeparator());
+            devices.forEach(device -> {
+                JButton button = new JButton("Trust ".concat(device.model()));
+                button.addActionListener(actionEvent -> {
+                    dispose();
+                    storage.getTrustedDevices().add(device);
+                    new Preferences(config, storage, 2);
+                });
+                trustedDevices.add(button);
+            });
+            if (devices.isEmpty() && storage.getTrustedDevices().isEmpty()) {
                 JLabel label = new JLabel("Connect your phone via usb to your computer");
                 label.setToolTipText("Android required");
                 trustedDevices.add(label);
@@ -116,7 +133,7 @@ public class Preferences extends JDialog {
                 config.setAppearance(theme);
                 Launcher.applyAppearance(config);
                 PassProtect.getInstance().setLoggedIn(true);
-                new Preferences(config, storage);
+                new Preferences(config, storage, 3);
             });
             appearance.add(button);
         }
