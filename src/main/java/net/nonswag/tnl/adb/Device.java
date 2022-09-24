@@ -7,7 +7,9 @@ import net.nonswag.tnl.core.api.math.Range;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 public class Device {
@@ -18,6 +20,12 @@ public class Device {
     private final String macAddress, ipAddress, version, fingerprint, model;
     @Nullable
     private final String status;
+    @Nonnull
+    private final UUID uniqueId;
+
+    public Device(@Nonnull String serialNumber) throws AdbException {
+        this(serialNumber, null);
+    }
 
     public Device(@Nonnull String serialNumber, @Nullable String status) throws AdbException {
         this.serialNumber = serialNumber;
@@ -27,6 +35,7 @@ public class Device {
         this.fingerprint = retrieveFingerprint();
         this.version = retrieveVersion();
         this.model = retrieveModel();
+        this.uniqueId = UUID.nameUUIDFromBytes(getMacAddress().getBytes(StandardCharsets.UTF_8));
     }
 
     @Nonnull

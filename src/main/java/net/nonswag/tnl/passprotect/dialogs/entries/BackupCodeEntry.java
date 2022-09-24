@@ -33,7 +33,7 @@ public class BackupCodeEntry extends JDialog {
     private Runnable onSuccess;
 
     public BackupCodeEntry(@Nonnull BackupCode backupCode, @Nonnull Config config, @Nonnull CloseEvent closeEvent) {
-        super((Frame) null, backupCode.getName().isEmpty() ? null : backupCode.getName());
+        super(PassProtect.getInstance().getWindow(), backupCode.getName().isEmpty() ? null : backupCode.getName());
         this.closeEvent = closeEvent;
         if (!backupCode.getName().isEmpty()) name.setText(backupCode.getName());
         if (backupCode.getCodes().length != 0) this.codes.setText(String.join("\n", backupCode.asStringArray()));

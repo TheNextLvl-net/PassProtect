@@ -1,6 +1,8 @@
 package net.nonswag.tnl.passprotect.panels;
 
 import lombok.Getter;
+import net.nonswag.tnl.adb.ADB;
+import net.nonswag.tnl.adb.Device;
 import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.fields.PasswordField;
@@ -10,6 +12,7 @@ import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
 import net.nonswag.tnl.passprotect.dialogs.ResetPassword;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -47,25 +50,19 @@ public class Login extends Panel {
         users.forEach(username::addItem);
         if (users.contains(user)) username.setSelectedItem(user);
         JTextComponent editor = (JTextComponent) username.getEditor().getEditorComponent();
-        editor.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(@Nonnull KeyEvent event) {
-                if (event.getKeyCode() != KeyEvent.VK_DOWN) return;
-                password.requestFocus();
-                event.consume();
-            }
-
-            @Override
-            public void keyReleased(@Nonnull KeyEvent event) {
-                if (event.getKeyCode() != KeyEvent.VK_ENTER) return;
-                String user = username.getSelectedItem() == null ? "" : (String) username.getSelectedItem();
-                File saves = new File(user, "saves.pp");
-                if (saves.exists() && saves.isFile()) password.requestFocus();
-                else PassProtect.invalidUser(user);
-            }
+        username.addItemListener(itemEvent -> {
+            if (itemEvent.getItem().equals(this.username.getSelectedItem())) return;
+            String username = (String) this.username.getSelectedItem();
+            if (username != null && new File(username, "config.json").exists()) updatePanel(new Config(username));
         });
         login.addActionListener(actionEvent -> handleLogin());
-        forgotPassword.addActionListener(actionEvent -> new ResetPassword((String) username.getSelectedItem()));
+        forgotPassword.addActionListener(actionEvent -> {
+            String username = (String) this.username.getSelectedItem();
+            if (username != null) {
+                if (new File(username, "config.json").exists()) new ResetPassword(new Config(username));
+                else PassProtect.invalidUser(username);
+            } else PassProtect.showErrorDialog("Enter a username");
+        });
         password.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(@Nonnull KeyEvent event) {
@@ -75,6 +72,28 @@ public class Login extends Panel {
         });
         checkBox.addActionListener(actionEvent -> ((PasswordField) password).setPasswordVisible(checkBox.isSelected()));
         register.addActionListener(actionEvent -> PassProtect.getInstance().init(new Registration()));
+    }
+
+    private void updatePanel(@Nullable String username) {
+        if (username == null) return;
+        if (!new File(username, "config.json").exists()) return;
+        updatePanel(new Config(username));
+    }
+
+    private void updatePanel(@Nonnull Config config) {
+        try {
+            for (Device device : ADB.getDevices()) {
+                if (!config.getTrustedDevices().isTrusted(device)) continue;
+                this.password.setText(config.getTrustedDevices().getPassword(device));
+                this.login.requestFocus();
+                return;
+            }
+            this.password.setText(null);
+            this.password.requestFocus();
+        } catch (Exception ignored) {
+        } finally {
+            Launcher.applyAppearance(config);
+        }
     }
 
     private void handleLogin() {
@@ -114,7 +133,9 @@ public class Login extends Panel {
 
     @Override
     public void onFocus() {
-        this.password.requestFocus();
+        updatePanel((String) this.username.getSelectedItem());
+        if (this.password.getPassword().length == 0) this.password.requestFocus();
+        else this.login.requestFocus();
     }
 
     private void createUIComponents() {

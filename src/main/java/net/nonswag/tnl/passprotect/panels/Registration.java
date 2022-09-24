@@ -1,6 +1,7 @@
 package net.nonswag.tnl.passprotect.panels;
 
 import lombok.Getter;
+import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.fields.PasswordField;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
@@ -146,5 +147,10 @@ public class Registration extends Panel {
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(600, 340);
+    }
+
+    @Override
+    public void onFocus() {
+        Launcher.applyAppearance(Config.APP);
     }
 }

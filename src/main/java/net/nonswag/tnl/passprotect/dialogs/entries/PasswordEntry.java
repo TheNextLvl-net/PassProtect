@@ -39,7 +39,7 @@ public class PasswordEntry extends JDialog {
     private Runnable onSuccess;
 
     public PasswordEntry(@Nonnull Password password, @Nonnull Config config, @Nonnull CloseEvent closeEvent) {
-        super((Frame) null, password.getName().isEmpty() ? null : password.getName());
+        super(PassProtect.getInstance().getWindow(), password.getName().isEmpty() ? null : password.getName());
         if (!password.getName().isEmpty()) name.setText(password.getName());
         if (password.getPassword().length != 0) {
             this.password.setText(new String(password.getPassword()));

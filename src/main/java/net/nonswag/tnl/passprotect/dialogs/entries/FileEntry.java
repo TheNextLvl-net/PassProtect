@@ -31,7 +31,7 @@ public class FileEntry extends JDialog {
     private Runnable onSuccess;
 
     public FileEntry(@Nonnull File file, @Nonnull Config config, @Nonnull CloseEvent closeEvent) {
-        super((Frame) null, file.getName().isEmpty() ? null : file.getName());
+        super(PassProtect.getInstance().getWindow(), file.getName().isEmpty() ? null : file.getName());
         if (!file.getName().isEmpty()) name.setText(file.getName());
         content.setText(String.join("\n", file.getContent()));
         importFile.setVisible(file.getContent().length == 0);

@@ -38,7 +38,7 @@ public class TOTPEntry extends JDialog {
 
     @SuppressWarnings("BusyWait")
     public TOTPEntry(@Nonnull TOTP totp, @Nonnull Config config, @Nonnull CloseEvent closeEvent) {
-        super((Frame) null, totp.getName().isEmpty() ? null : totp.getName());
+        super(PassProtect.getInstance().getWindow(), totp.getName().isEmpty() ? null : totp.getName());
         if (!totp.getIssuer().isEmpty()) this.issuer.setText(totp.getIssuer());
         if (!totp.getAccountName().isEmpty()) this.accountName.setText(totp.getAccountName());
         if (!totp.getSecretKey().isEmpty()) this.secretKey.setText(totp.getSecretKey());

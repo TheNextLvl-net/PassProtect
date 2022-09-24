@@ -57,8 +57,7 @@ public class Launcher {
     public static void applyAppearance(@Nonnull Config config) {
         try {
             UIManager.setLookAndFeel(config.getAppearance().getClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         } finally {
             Enumeration<Object> keys = UIManager.getDefaults().keys();
             while (keys.hasMoreElements()) {
@@ -66,7 +65,14 @@ public class Launcher {
                 Object value = UIManager.get(key);
                 if (value instanceof Font) UIManager.put(key, config.getFont());
             }
+            updateLAF(PassProtect.getInstance().getWindow());
         }
+    }
+
+    private static void updateLAF(@Nullable Window window) {
+        if (window == null) return;
+        for (Window childWindow : window.getOwnedWindows()) updateLAF(childWindow);
+        SwingUtilities.updateComponentTreeUI(window);
     }
 
     public static void main(String[] args) throws Exception {

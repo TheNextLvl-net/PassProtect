@@ -2,9 +2,9 @@ package net.nonswag.tnl.passprotect.dialogs;
 
 import net.nonswag.tnl.adb.AdbException;
 import net.nonswag.tnl.adb.Device;
-import net.nonswag.tnl.adb.DeviceReference;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
+import net.nonswag.tnl.passprotect.api.files.TrustedDevices;
 
 import javax.annotation.Nonnull;
 import javax.swing.*;
@@ -19,8 +19,8 @@ public class DeviceInformation extends JDialog {
     @Nonnull
     private JButton buttonOK, untrust;
 
-    public DeviceInformation(@Nonnull Preferences preferences, @Nonnull DeviceReference reference, @Nonnull Config config, @Nonnull Storage storage) {
-        super(preferences, reference.model());
+    public DeviceInformation(@Nonnull Preferences preferences, @Nonnull TrustedDevices.Device device, @Nonnull Config config, @Nonnull Storage storage) {
+        super(preferences, device.getName());
         setModal(true);
         setContentPane(panel);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -35,29 +35,29 @@ public class DeviceInformation extends JDialog {
         setPreferredSize(new Dimension(360, 180));
         pack();
         setLocationRelativeTo(preferences);
-        setupWindow(preferences, reference, config, storage);
+        setupWindow(preferences, device, config, storage);
         setVisible(true);
         setAlwaysOnTop(true);
     }
 
-    private void setupWindow(@Nonnull Preferences preferences, @Nonnull DeviceReference reference, @Nonnull Config config, @Nonnull Storage storage) {
+    private void setupWindow(@Nonnull Preferences preferences, @Nonnull TrustedDevices.Device device, @Nonnull Config config, @Nonnull Storage storage) {
         try {
-            Device device = new Device(reference.serialNumber(), reference.model());
-            String battery = "Battery: %s%%".formatted(device.getBatteryLevel());
-            if (device.getBatteryStatus().equals(Device.Status.CHARGING)) battery += " (Charging)";
+            Device physicalDevice = new Device(device.getSerialNumber());
+            String battery = "Battery: %s%%".formatted(physicalDevice.getBatteryLevel());
+            if (physicalDevice.getBatteryStatus().equals(Device.Status.CHARGING)) battery += " (Charging)";
             information.add(new JLabel("Status: Connected"));
-            information.add(new JLabel("Model: ".concat(reference.model())));
-            information.add(new JLabel("IP-Address: ".concat(device.getIpAddress())));
+            information.add(new JLabel("Name: ".concat(device.getName())));
+            information.add(new JLabel("IP-Address: ".concat(physicalDevice.getIpAddress())));
             information.add(new JLabel("Mac-Address: ".concat(device.getMacAddress())));
             information.add(new JLabel(battery));
         } catch (AdbException ignored) {
             information.add(new JLabel("Status: Disconnected"));
-            information.add(new JLabel("Model: ".concat(reference.model())));
+            information.add(new JLabel("Name: ".concat(device.getName())));
         } finally {
             untrust.addActionListener(actionEvent -> {
                 dispose();
                 preferences.dispose();
-                storage.getTrustedDevices().remove(reference);
+                config.getTrustedDevices().untrust(device);
                 new Preferences(config, storage, 2);
             });
         }

@@ -1,9 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs;
 
-import com.google.common.hash.Hashing;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.api.fields.PasswordField;
-import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
 import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
@@ -29,24 +27,21 @@ public class ChangePassword extends JDialog {
     @Nonnull
     private JCheckBox checkBox;
     @Nonnull
-    private JTextField hint;
-    @Nonnull
-    private JLabel oldPasswordIcon, newPasswordIcon, confirmPasswordIcon, hintIcon;
+    private JLabel oldPasswordIcon, newPasswordIcon, confirmPasswordIcon;
 
     private void createUIComponents() {
         Config config = Config.getInstance();
         oldPassword = new PasswordField().setPlaceholder("Current password");
         newPassword = new PasswordField().setPlaceholder("New password");
         confirmPassword = new PasswordField().setPlaceholder("Repeat password");
-        hint = new TextField(config == null ? null : config.getHint()).setPlaceholder("Enter a hint");
     }
 
     @Nullable
-    private final CloseEvent closeEvent = (current, newPassword, confirm, hint, type) -> {
+    private final CloseEvent closeEvent = (current, newPassword, confirm, type) -> {
         Storage storage = Storage.getInstance();
         if (storage == null || !type.isConfirm()) return true;
         if (current.length > 0) {
-            if (Arrays.equals(storage.getSecurityKey(), Hashing.sha256().hashBytes(String.valueOf(current).getBytes(StandardCharsets.UTF_8)).asBytes())) {
+            if (Arrays.equals(storage.getSecurityKey(), new String(current).getBytes(StandardCharsets.UTF_8))) {
                 if (newPassword.length > 0) {
                     if (Arrays.equals(newPassword, confirm)) {
                         if (newPassword.length >= 8) {
@@ -56,7 +51,6 @@ public class ChangePassword extends JDialog {
                                 if (config != null) {
                                     Storage.setInstance(null);
                                     config.setLastPasswordChange(System.currentTimeMillis());
-                                    config.setHint(hint.isEmpty() ? null : hint);
                                     config.save();
                                 }
                                 Config.setInstance(null);
@@ -75,19 +69,18 @@ public class ChangePassword extends JDialog {
     };
 
     public ChangePassword(@Nonnull Storage storage, @Nonnull Config config) {
-        super((Frame) null, "Change password");
+        super(PassProtect.getInstance().getWindow(), "Change password");
         oldPasswordIcon.setIcon(TreeIconRenderer.Logo.PASSWORD.getIcon(config));
         newPasswordIcon.setIcon(TreeIconRenderer.Logo.PASSWORD.getIcon(config));
         confirmPasswordIcon.setIcon(TreeIconRenderer.Logo.PASSWORD.getIcon(config));
-        hintIcon.setIcon(TreeIconRenderer.Logo.HINT.getIcon(config));
         setContentPane(panel);
         getRootPane().setDefaultButton(buttonOK);
-        buttonOK.addActionListener(e -> close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), hint.getText(), CloseEvent.Type.CONFIRM));
-        buttonCancel.addActionListener(e -> close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), hint.getText(), CloseEvent.Type.CANCEL));
+        buttonOK.addActionListener(e -> close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), CloseEvent.Type.CONFIRM));
+        buttonCancel.addActionListener(e -> close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), CloseEvent.Type.CANCEL));
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(@Nonnull WindowEvent event) {
-                close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), hint.getText(), CloseEvent.Type.CLOSE);
+                close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(), CloseEvent.Type.CLOSE);
             }
         });
         checkBox.addActionListener(actionEvent -> {
@@ -96,7 +89,7 @@ public class ChangePassword extends JDialog {
             ((PasswordField) confirmPassword).setPasswordVisible(checkBox.isSelected());
         });
         panel.registerKeyboardAction(e -> close(oldPassword.getPassword(), newPassword.getPassword(), confirmPassword.getPassword(),
-                hint.getText(), CloseEvent.Type.CLOSE), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+                CloseEvent.Type.CLOSE), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
@@ -107,14 +100,14 @@ public class ChangePassword extends JDialog {
         panel.requestFocus(FocusEvent.Cause.ACTIVATION);
     }
 
-    private void close(@Nonnull char[] current, @Nonnull char[] newPassword, @Nonnull char[] confirm, @Nonnull String hint, @Nonnull CloseEvent.Type type) {
+    private void close(@Nonnull char[] current, @Nonnull char[] newPassword, @Nonnull char[] confirm, @Nonnull CloseEvent.Type type) {
         boolean close = true;
-        if (closeEvent != null) close = closeEvent.close(current, newPassword, confirm, hint, type);
+        if (closeEvent != null) close = closeEvent.close(current, newPassword, confirm, type);
         if (close) dispose();
     }
 
     private interface CloseEvent {
-        boolean close(@Nonnull char[] current, @Nonnull char[] newPassword, @Nonnull char[] confirm, @Nonnull String hint, @Nonnull CloseEvent.Type type);
+        boolean close(@Nonnull char[] current, @Nonnull char[] newPassword, @Nonnull char[] confirm, @Nonnull CloseEvent.Type type);
 
         enum Type {
             CLOSE, CANCEL, CONFIRM;

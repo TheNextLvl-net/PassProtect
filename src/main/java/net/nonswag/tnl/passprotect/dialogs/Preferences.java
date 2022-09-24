@@ -1,7 +1,7 @@
 package net.nonswag.tnl.passprotect.dialogs;
 
 import net.nonswag.tnl.adb.ADB;
-import net.nonswag.tnl.adb.DeviceReference;
+import net.nonswag.tnl.adb.Device;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
 import net.nonswag.tnl.core.utils.LinuxUtil;
 import net.nonswag.tnl.core.utils.SystemUtil;
@@ -10,6 +10,7 @@ import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.Uninstaller;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
+import net.nonswag.tnl.passprotect.api.files.TrustedDevices;
 
 import javax.annotation.Nonnull;
 import javax.swing.*;
@@ -34,6 +35,7 @@ public class Preferences extends JDialog {
     private JScrollPane appearanceScrollBar, trustedDevicesScrollBar;
     @Nonnull
     private JButton changePassword, deleteUser, install, uninstall;
+    private JButton changeHint;
 
     public Preferences(@Nonnull Config config, @Nonnull Storage storage, int tab) {
         super(PassProtect.getInstance().getWindow(), "Preferences");
@@ -61,7 +63,7 @@ public class Preferences extends JDialog {
         uninstall.setEnabled(PassProtect.isInstalled());
         install.setToolTipText(install.isEnabled() ? null : PassProtect.isInstalled() ? "PassProtect is already installed" : "Installation file not found");
         uninstall.setToolTipText(uninstall.isEnabled() ? null : "PassProtect is not installed");
-        install.addActionListener(actionEvent -> {
+        if (install.getActionListeners().length == 0) install.addActionListener(actionEvent -> {
             java.io.File installer = Launcher.getFile();
             if (installer != null) {
                 try {
@@ -72,7 +74,7 @@ public class Preferences extends JDialog {
                 }
             } else PassProtect.showErrorDialog("Found no installation file");
         });
-        uninstall.addActionListener(actionEvent -> {
+        if (uninstall.getActionListeners().length == 0) uninstall.addActionListener(actionEvent -> {
             try {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to uninstall PassProtect?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     Uninstaller.init(null);
@@ -81,7 +83,7 @@ public class Preferences extends JDialog {
                 PassProtect.showErrorDialog("Failed to uninstall PassProtect", e);
             }
         });
-        deleteUser.addActionListener(actionEvent -> {
+        if (deleteUser.getActionListeners().length == 0) deleteUser.addActionListener(actionEvent -> {
             if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you really want to delete this user\nThis cannot be undone", "Delete user", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 if (FileHelper.delete(storage.getFile().getAbsoluteFile().getParentFile())) {
                     Config.setInstance(null);
@@ -91,31 +93,35 @@ public class Preferences extends JDialog {
             }
         });
         trustedDevicesScrollBar.getVerticalScrollBar().setUnitIncrement(15);
+        this.trustedDevices.removeAll();
         if (SystemUtil.TYPE.isLinux()) try {
-            List<DeviceReference> devices = new ArrayList<>();
-            ADB.getDevices().forEach(device -> {
-                DeviceReference reference = new DeviceReference(device.getModel(), device.getSerialNumber());
-                if (!storage.getTrustedDevices().contains(reference)) devices.add(reference);
-            });
-            storage.getTrustedDevices().forEach(device -> {
-                JButton button = new JButton(device.model());
+            TrustedDevices trustedDevices = config.getTrustedDevices();
+            trustedDevices.getDevices().forEach(device -> {
+                JButton button = new JButton(device.getName());
                 button.addActionListener(actionEvent -> new DeviceInformation(this, device, config, storage));
-                trustedDevices.add(button);
+                this.trustedDevices.add(button);
             });
-            if (!storage.getTrustedDevices().isEmpty() && !devices.isEmpty()) trustedDevices.add(new JSeparator());
+            List<Device> devices = new ArrayList<>();
+            ADB.getDevices().forEach(device -> {
+                if (!trustedDevices.isTrusted(device)) devices.add(device);
+            });
+            if (trustedDevices.hasTrustedDevices() && !devices.isEmpty()) this.trustedDevices.add(new JSeparator());
             devices.forEach(device -> {
-                JButton button = new JButton("Trust ".concat(device.model()));
+                JButton button = new JButton("Trust ".concat(device.getModel()));
                 button.addActionListener(actionEvent -> {
-                    dispose();
-                    storage.getTrustedDevices().add(device);
-                    new Preferences(config, storage, 2);
+                    try {
+                        trustedDevices.trust(device, new String(storage.getSecurityKey()));
+                        setupWindow(config, storage);
+                    } catch (Exception e) {
+                        PassProtect.showErrorDialog("Failed to trust device", e);
+                    }
                 });
-                trustedDevices.add(button);
+                this.trustedDevices.add(button);
             });
-            if (devices.isEmpty() && storage.getTrustedDevices().isEmpty()) {
+            if (devices.isEmpty() && !config.getTrustedDevices().hasTrustedDevices()) {
                 JLabel label = new JLabel("Connect your phone via usb to your computer");
                 label.setToolTipText("Android required");
-                trustedDevices.add(label);
+                this.trustedDevices.add(label);
             }
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().startsWith("Cannot run program")) {
@@ -124,6 +130,7 @@ public class Preferences extends JDialog {
             else trustedDevices.add(new JLabel("Something went wrong"));
         }
         else tab.setEnabledAt(2, false);
+        appearance.removeAll();
         appearanceScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         for (int index = 0; index < Launcher.getLookAndFeels().size(); index++) {
             UIManager.LookAndFeelInfo theme = Launcher.getLookAndFeels().get(index);
@@ -132,12 +139,17 @@ public class Preferences extends JDialog {
             button.addActionListener(actionEvent -> {
                 config.setAppearance(theme);
                 Launcher.applyAppearance(config);
-                PassProtect.getInstance().setLoggedIn(true);
-                new Preferences(config, storage, 3);
+                setupWindow(config, storage);
             });
             appearance.add(button);
         }
-        changePassword.addActionListener(actionEvent -> new ChangePassword(storage, config));
+        if (changePassword.getActionListeners().length == 0) {
+            changePassword.addActionListener(actionEvent -> new ChangePassword(storage, config));
+        }
+        if (changeHint.getActionListeners().length == 0) changeHint.addActionListener(actionEvent -> {
+            String hint = (String) JOptionPane.showInputDialog(this, "Enter a new hint", "Change hint", JOptionPane.INFORMATION_MESSAGE, null, null, config.getHint());
+            if (hint != null) config.setHint(hint);
+        });
     }
 
     private void createUIComponents() {

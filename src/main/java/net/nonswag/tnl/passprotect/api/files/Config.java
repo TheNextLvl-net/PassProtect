@@ -32,18 +32,29 @@ public class Config extends JsonFile {
     @Nonnull
     private UIManager.LookAndFeelInfo appearance;
     @Nullable
-    private String hint;
+    private String hint, lastUser;
+    @Nonnull
+    private final String username;
     @Nullable
-    private String lastUser;
+    private final TrustedDevices trustedDevices;
     private int passwordChangeReminder;
     private long lastPasswordChange;
 
     public Config(@Nonnull String username) {
         super(username, "config.json");
+        this.trustedDevices = new TrustedDevices(this.username = username);
     }
 
     private Config() {
         super("config.json");
+        trustedDevices = null;
+        username = "APP";
+    }
+
+    @Nonnull
+    public TrustedDevices getTrustedDevices() {
+        assert trustedDevices != null;
+        return trustedDevices;
     }
 
     @Nonnull
@@ -69,15 +80,15 @@ public class Config extends JsonFile {
     public void save() throws FileSaveException {
         JsonObject root = new JsonObject();
         JsonObject font = new JsonObject();
-        font.addProperty("type", this.font.getName());
-        font.addProperty("size", this.font.getSize());
-        root.add("font", font);
-        root.addProperty("appearance", this.appearance.getClassName());
-        if (!equals(APP) && hint != null)
-            root.addProperty("hint", Base64.getEncoder().encodeToString(hint.getBytes(getCharset())));
-        if (equals(APP) && lastUser != null) root.addProperty("last-user", lastUser);
-        if (!equals(APP)) root.addProperty("last-password-change", lastPasswordChange);
-        if (!equals(APP)) root.addProperty("password-change-reminder", passwordChangeReminder);
+        if (!equals(APP)) {
+            font.addProperty("type", this.font.getName());
+            font.addProperty("size", this.font.getSize());
+            root.add("font", font);
+            root.addProperty("appearance", this.appearance.getClassName());
+            if (hint != null) root.addProperty("hint", Base64.getEncoder().encodeToString(hint.getBytes(getCharset())));
+            root.addProperty("last-password-change", lastPasswordChange);
+            root.addProperty("password-change-reminder", passwordChangeReminder);
+        } else if (equals(APP) && lastUser != null) root.addProperty("last-user", lastUser);
         setJsonElement(root);
         super.save();
     }
