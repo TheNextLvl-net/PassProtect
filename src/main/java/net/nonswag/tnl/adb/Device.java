@@ -3,6 +3,7 @@ package net.nonswag.tnl.adb;
 import lombok.Getter;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.math.Range;
+import net.nonswag.tnl.core.utils.SystemUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,15 +41,17 @@ public class Device {
 
     @Nonnull
     private String retrieveMacAddress() throws AdbException {
-        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'link/ether '| cut -d' ' -f6");
+        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'link/ether '| cut -d' ' -f6", "ip addr show wlan0 | findstr \"link/ether \"");
         if (callback.isEmpty()) throw new AdbException("WLAN information not found");
+        if (SystemUtil.TYPE.isWindows()) return callback.get(0).replace("  ", "").split(" ")[1];
         return callback.get(0);
     }
 
     @Nonnull
     private String retrieveIPAddress() throws AdbException {
-        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'inet '| cut -d' ' -f6");
+        List<String> callback = runShellCommand("ip addr show wlan0 | grep 'inet '| cut -d' ' -f6", "ip addr show wlan0 | findstr \"inet \"");
         if (callback.isEmpty()) throw new AdbException("WLAN information not found");
+        if (SystemUtil.TYPE.isWindows()) return callback.get(0).replace("  ", "").split(" ")[1].split("/")[0];
         return callback.get(0).split("/")[0];
     }
 
@@ -125,7 +128,7 @@ public class Device {
 
     @Range(from = 0, to = 100)
     public int getBatteryLevel() throws AdbException {
-        List<String> callback = runShellCommand("dumpsys battery | grep level");
+        List<String> callback = runShellCommand("dumpsys battery | grep level", "dumpsys battery | findstr \"level\"");
         if (callback.isEmpty()) throw new AdbException("Battery information not found");
         String[] level = callback.get(0).split(" ");
         return Integer.parseInt(level[level.length - 1]);
@@ -133,7 +136,7 @@ public class Device {
 
     @Nonnull
     public Status getBatteryStatus() throws AdbException {
-        List<String> callback = runShellCommand("dumpsys battery | grep status");
+        List<String> callback = runShellCommand("dumpsys battery | grep status", "dumpsys battery | findstr \"status\"");
         if (callback.isEmpty()) throw new AdbException("Battery information not found");
         String[] level = callback.get(0).split(" ");
         return Status.valueOf(Integer.parseInt(level[level.length - 1]));
@@ -216,6 +219,16 @@ public class Device {
     @Nonnull
     public List<String> runShellCommand(@Nonnull String command) throws AdbException {
         return runCommand("shell ".concat(command));
+    }
+
+    @Nonnull
+    private List<String> runCommand(@Nonnull String command, @Nonnull String alternative) throws AdbException {
+        return SystemUtil.TYPE.isWindows() ? runCommand(alternative) : runCommand(command);
+    }
+
+    @Nonnull
+    private List<String> runShellCommand(@Nonnull String command, @Nonnull String alternative) throws AdbException {
+        return SystemUtil.TYPE.isWindows() ? runShellCommand(alternative) : runShellCommand(command);
     }
 
     @Getter

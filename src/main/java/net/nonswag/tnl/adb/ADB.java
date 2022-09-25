@@ -31,7 +31,9 @@ public class ADB {
                     if (s.isEmpty()) return;
                     List<String> split = Arrays.stream(s.split(" ")).filter(s1 -> !s1.isEmpty()).toList();
                     if (split.isEmpty()) return;
-                    devices.add(new Device(split.get(0), split.size() >= 2 ? split.get(1) : null));
+                    String status = split.size() >= 2 ? split.get(1) : null;
+                    if ("unauthorized".equalsIgnoreCase(status)) throw new AdbException("device not authorized");
+                    devices.add(new Device(split.get(0), status));
                 } catch (AdbException e) {
                     Logger.error.println("Failed to read device information: " + s, e);
                 }
@@ -44,18 +46,19 @@ public class ADB {
 
     @Nonnull
     public static List<String> execute(@Nonnull String command) throws AdbException {
-        List<String> callback = new ArrayList<>();
         try {
-            Process process = Runtime.getRuntime().exec("adb ".concat(command), null, SystemUtil.TYPE.isLinux() ? null : new File("platform-tools"));
+            List<String> callback = new ArrayList<>();
+            Process process = SystemUtil.TYPE.isLinux() ? Runtime.getRuntime().exec("adb ".concat(command)) :
+                    Runtime.getRuntime().exec("cmd.exe /C adb.exe ".concat(command), null, new File("platform-tools"));
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String string;
             while ((string = br.readLine()) != null) callback.add(string);
             process.waitFor();
             process.destroy();
             br.close();
+            return callback;
         } catch (Exception e) {
             throw new AdbException(e.getMessage(), e);
         }
-        return callback;
     }
 }
