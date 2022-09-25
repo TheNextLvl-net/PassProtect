@@ -4,7 +4,6 @@ import net.nonswag.tnl.adb.ADB;
 import net.nonswag.tnl.adb.Device;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
 import net.nonswag.tnl.core.utils.LinuxUtil;
-import net.nonswag.tnl.core.utils.SystemUtil;
 import net.nonswag.tnl.passprotect.Launcher;
 import net.nonswag.tnl.passprotect.PassProtect;
 import net.nonswag.tnl.passprotect.Uninstaller;
@@ -94,7 +93,7 @@ public class Preferences extends JDialog {
         });
         trustedDevicesScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         this.trustedDevices.removeAll();
-        if (SystemUtil.TYPE.isLinux()) try {
+        try {
             TrustedDevices trustedDevices = config.getTrustedDevices();
             trustedDevices.getDevices().forEach(device -> {
                 JButton button = new JButton(device.getName());
@@ -128,8 +127,8 @@ public class Preferences extends JDialog {
                 trustedDevices.add(new JLabel("To use this feature you have to install ADB"));
             } else if (e.getMessage() != null) trustedDevices.add(new JLabel(e.getMessage()));
             else trustedDevices.add(new JLabel("Something went wrong"));
+            PassProtect.showErrorDialog("Failed to start ADB-Drivers", e);
         }
-        else tab.setEnabledAt(2, false);
         appearance.removeAll();
         appearanceScrollBar.getVerticalScrollBar().setUnitIncrement(15);
         for (int index = 0; index < Launcher.getLookAndFeels().size(); index++) {

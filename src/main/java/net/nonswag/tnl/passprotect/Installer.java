@@ -3,15 +3,18 @@ package net.nonswag.tnl.passprotect;
 import net.nonswag.tnl.core.api.errors.file.FileException;
 import net.nonswag.tnl.core.api.file.formats.ShellFile;
 import net.nonswag.tnl.core.api.file.formats.TextFile;
+import net.nonswag.tnl.core.api.file.helper.FileDownloader;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
 import net.nonswag.tnl.core.utils.SystemUtil;
 
 import javax.annotation.Nonnull;
 import javax.swing.*;
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class Installer {
 
@@ -33,6 +36,7 @@ public class Installer {
             } catch (FileException e) {
                 PassProtect.showErrorDialog("Failed to copy resource file", e);
             }
+            if (SystemUtil.TYPE.isWindows()) installADB(destination);
             if (!update) {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     createDesktopEntry("%s/Desktop".formatted(home), destination.getAbsolutePath());
@@ -48,6 +52,31 @@ public class Installer {
         } catch (Exception e) {
             PassProtect.showErrorDialog("Failed to %s PassProtect".formatted(update ? "update" : "install"), e);
             System.exit(1);
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static void installADB(@Nonnull File destination) throws IOException {
+        Thread thread = new Thread(() -> JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Installing ADB-Drivers", "Installing…", JOptionPane.INFORMATION_MESSAGE));
+        thread.start();
+        File file = new File(destination, "platform-tools.zip");
+        FileDownloader.download("https://dl.google.com/android/repository/platform-tools-latest-windows.zip", file);
+        thread.interrupt();
+        try (ZipFile zipFile = new ZipFile(file)) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                File entryDestination = new File(destination, entry.getName());
+                if (!entry.isDirectory()) {
+                    entryDestination.getParentFile().mkdirs();
+                    try (InputStream in = zipFile.getInputStream(entry); OutputStream out = new FileOutputStream(entryDestination)) {
+                        out.write(in.readAllBytes());
+                    }
+                } else entryDestination.mkdirs();
+            }
+            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed ADB-Drivers", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } finally {
+            FileHelper.delete(file);
         }
     }
 

@@ -1,7 +1,6 @@
 /target/
 /Core/
 config.json
-passwords.txt
 /.idea/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
