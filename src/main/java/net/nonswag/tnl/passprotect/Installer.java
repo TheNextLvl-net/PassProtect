@@ -35,7 +35,7 @@ public class Installer {
             } catch (FileException e) {
                 PassProtect.showErrorDialog("Failed to copy resource file", e);
             }
-            if (SystemUtil.TYPE.isWindows()) installADB(destination, update);
+            installADB(destination, update);
             if (!update) {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     createDesktopEntry(new File(home, "Desktop"), destination.getAbsoluteFile());
@@ -54,13 +54,18 @@ public class Installer {
         }
     }
 
+    private static void installADB(@Nonnull File destination, boolean update) {
+        try {
+            if (SystemUtil.TYPE.isWindows()) installWindowsADB(destination, update);
+        } catch (Exception e) {
+            PassProtect.showErrorDialog("Failed to %s PassProtect".formatted(update ? "update" : "install"), e);
+        }
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void installADB(@Nonnull File destination, boolean update) throws IOException {
-        Thread thread = new Thread(() -> JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Installing ADB-Drivers", "Installing…", JOptionPane.INFORMATION_MESSAGE));
-        thread.start();
+    private static void installWindowsADB(@Nonnull File destination, boolean update) throws IOException {
         File file = new File(destination, "platform-tools.zip");
         FileDownloader.download("https://dl.google.com/android/repository/platform-tools-latest-windows.zip", file);
-        thread.interrupt();
         try (ZipFile zipFile = new ZipFile(file)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
