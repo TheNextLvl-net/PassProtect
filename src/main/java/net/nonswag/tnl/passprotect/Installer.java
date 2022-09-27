@@ -1,7 +1,6 @@
 package net.nonswag.tnl.passprotect;
 
 import net.nonswag.tnl.core.api.errors.file.FileException;
-import net.nonswag.tnl.core.api.file.formats.ShellFile;
 import net.nonswag.tnl.core.api.file.formats.TextFile;
 import net.nonswag.tnl.core.api.file.helper.FileDownloader;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
@@ -36,13 +35,13 @@ public class Installer {
             } catch (FileException e) {
                 PassProtect.showErrorDialog("Failed to copy resource file", e);
             }
-            if (SystemUtil.TYPE.isWindows()) installADB(destination);
+            if (SystemUtil.TYPE.isWindows()) installADB(destination, update);
             if (!update) {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                    createDesktopEntry("%s/Desktop".formatted(home), destination.getAbsolutePath());
+                    createDesktopEntry(new File(home, "Desktop"), destination.getAbsoluteFile());
                 }
-                if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create activities entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
-                    createDesktopEntry("%s/.local/share/applications".formatted(home), destination.getAbsolutePath());
+                if (SystemUtil.TYPE.isLinux() && JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create activities entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION) {
+                    createDesktopEntry(new File(home, "%s/.local/share/applications"), destination.getAbsoluteFile());
                 }
                 JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed PassProtect", "Installer", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -56,7 +55,7 @@ public class Installer {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void installADB(@Nonnull File destination) throws IOException {
+    private static void installADB(@Nonnull File destination, boolean update) throws IOException {
         Thread thread = new Thread(() -> JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Installing ADB-Drivers", "Installing…", JOptionPane.INFORMATION_MESSAGE));
         thread.start();
         File file = new File(destination, "platform-tools.zip");
@@ -74,20 +73,13 @@ public class Installer {
                     }
                 } else entryDestination.mkdirs();
             }
-            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully installed ADB-Drivers", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(PassProtect.getInstance().getWindow(), "Successfully %s ADB-Drivers".formatted(update ? "updated" : "installed"), "Success", JOptionPane.INFORMATION_MESSAGE);
         } finally {
             FileHelper.delete(file);
         }
     }
 
-    public static void createCommand() throws FileException {
-        ShellFile file = new ShellFile("/usr/bin/", "pass-protect");
-        file.setContent(new String[]{"cd /home/david/.pass-protect/", "java -jar PassProtect.jar ${@}"});
-        if (!file.getFile().setExecutable(true, false)) throw new FileException("Failed to mark file as executable");
-        file.save();
-    }
-
-    private static void createDesktopEntry(@Nonnull String location, @Nonnull String destination) {
+    private static void createDesktopEntry(@Nonnull File location, @Nonnull File destination) {
         try {
             if (SystemUtil.TYPE.isLinux()) createLinuxDesktopEntry(location, destination);
             else if (SystemUtil.TYPE.isWindows()) createWindowsDesktopEntry(location, destination);
@@ -98,25 +90,29 @@ public class Installer {
         }
     }
 
-    private static void createLinuxDesktopEntry(@Nonnull String location, @Nonnull String destination) {
-        new TextFile(location, "pass-protect.desktop").setContent("""
+    private static void createLinuxDesktopEntry(@Nonnull File location, @Nonnull File destination) {
+        new TextFile(new File(location, "pass-protect.desktop")).setContent("""
                 [Desktop Entry]
                 Type=Application
                 Version=1.0
                 Name=PassProtect
                 Exec=java -jar PassProtect.jar start installed
                 Path=%s
-                Icon=%s/icon.png
+                Icon=%s
                 Terminal=false
                 Categories=Security;
-                """.formatted(destination, destination)).save();
+                """.formatted(destination.getAbsolutePath(), new File(destination, "icon.png").getAbsolutePath())).save();
     }
 
-    private static void createWindowsDesktopEntry(@Nonnull String location, @Nonnull String destination) {
-        throw new UnsupportedOperationException("This feature is currently not working on windows");
+    private static void createWindowsDesktopEntry(@Nonnull File location, @Nonnull File destination) {
+        new TextFile(new File(location, "PassProtect.vbs")).setContent("""
+                Set WshShell = CreateObject("WScript.Shell")
+                WshShell.CurrentDirectory = "%s"
+                WshShell.Run "java -jar PassProtect.jar start installed", 0, false
+                """.formatted(destination)).save();
     }
 
-    private static void createMacDesktopEntry(@Nonnull String location, @Nonnull String destination) {
+    private static void createMacDesktopEntry(@Nonnull File location, @Nonnull File destination) {
         throw new UnsupportedOperationException("This feature is currently not working on mac");
     }
 }

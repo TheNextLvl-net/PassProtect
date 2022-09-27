@@ -95,14 +95,14 @@ public class Preferences extends JDialog {
         this.trustedDevices.removeAll();
         try {
             TrustedDevices trustedDevices = config.getTrustedDevices();
+            List<Device> devices = new ArrayList<>();
+            ADB.getDevices().forEach(device -> {
+                if (!trustedDevices.isTrusted(device)) devices.add(device);
+            });
             trustedDevices.getDevices().forEach(device -> {
                 JButton button = new JButton(device.getName());
                 button.addActionListener(actionEvent -> new DeviceInformation(this, device, config, storage));
                 this.trustedDevices.add(button);
-            });
-            List<Device> devices = new ArrayList<>();
-            ADB.getDevices().forEach(device -> {
-                if (!trustedDevices.isTrusted(device)) devices.add(device);
             });
             if (trustedDevices.hasTrustedDevices() && !devices.isEmpty()) this.trustedDevices.add(new JSeparator());
             devices.forEach(device -> {
@@ -124,10 +124,10 @@ public class Preferences extends JDialog {
             }
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().startsWith("Cannot run program")) {
-                trustedDevices.add(new JLabel("To use this feature you have to install ADB"));
+                trustedDevices.add(new JLabel("Failed to access ADB-Drivers"));
             } else if (e.getMessage() != null) trustedDevices.add(new JLabel(e.getMessage()));
             else trustedDevices.add(new JLabel("Something went wrong"));
-            PassProtect.showErrorDialog("Failed to start ADB-Drivers", e);
+            PassProtect.showErrorDialog("Failed to access ADB-Drivers", e);
         }
         appearance.removeAll();
         appearanceScrollBar.getVerticalScrollBar().setUnitIncrement(15);

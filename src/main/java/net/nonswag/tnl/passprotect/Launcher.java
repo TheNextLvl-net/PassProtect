@@ -4,6 +4,7 @@ import com.github.weisj.darklaf.theme.laf.*;
 import lombok.Getter;
 import net.nonswag.tnl.core.Core;
 import net.nonswag.tnl.core.api.logger.Logger;
+import net.nonswag.tnl.core.utils.SystemUtil;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.files.Storage;
 
@@ -76,7 +77,7 @@ public class Launcher {
     }
 
     public static void main(String[] args) throws Exception {
-        Core.main(args);
+        if (!SystemUtil.TYPE.isWindows()) Core.main(args);
         List<String> arguments = Arrays.asList(args);
         boolean shortcut = !arguments.isEmpty() && arguments.get(arguments.size() - 1).equalsIgnoreCase("sc");
         if (args.length >= 1) {
