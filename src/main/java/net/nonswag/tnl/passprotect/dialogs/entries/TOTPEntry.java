@@ -9,6 +9,7 @@ import net.nonswag.tnl.passprotect.api.entry.TOTP;
 import net.nonswag.tnl.passprotect.api.fields.PasswordField;
 import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
+import net.nonswag.tnl.passprotect.utils.Clipboard;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,9 +76,12 @@ public class TOTPEntry extends JDialog {
             if (isEmpty()) qrCode.setText("Import from QR-Code");
             else qrCode.setText("Show QR-Code");
             String secret = secretKey.getPassword() == null ? "" : String.valueOf(secretKey.getPassword());
-            code.setText(StringUtil.format("0".repeat(6), Authenticator.INSTANCE.getTotpPassword(secret)));
+            String text = StringUtil.format("0".repeat(6), Authenticator.INSTANCE.getTotpPassword(secret));
             qrCode.setEnabled(!accountName.getText().isEmpty() || isEmpty());
             code.setVisible(true);
+            if (code.getText().equals(text)) return;
+            code.setText(text);
+            code.setEnabled(true);
         } catch (IllegalArgumentException e) {
             qrCode.setEnabled(isEmpty());
             code.setVisible(false);
@@ -92,7 +96,10 @@ public class TOTPEntry extends JDialog {
 
     private void registerListeners() {
         code.addActionListener(actionEvent -> {
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(code.getText()), (clipboard, transferable) -> code.setEnabled(true));
+            StringSelection contents = new StringSelection(code.getText());
+            Clipboard.setContent(code.getText(), (clipboard, transferable) -> {
+                if (!code.getText().equals(Clipboard.getContent())) code.setEnabled(true);
+            });
             code.setEnabled(false);
         });
         buttonOK.addActionListener(e -> close(CloseEvent.Type.CONFIRM));

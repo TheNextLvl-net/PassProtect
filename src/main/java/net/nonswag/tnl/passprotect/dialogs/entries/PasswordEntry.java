@@ -8,14 +8,15 @@ import net.nonswag.tnl.passprotect.api.fields.TextField;
 import net.nonswag.tnl.passprotect.api.files.Config;
 import net.nonswag.tnl.passprotect.api.renderer.TreeIconRenderer;
 import net.nonswag.tnl.passprotect.dialogs.Randomizer;
+import net.nonswag.tnl.passprotect.utils.Clipboard;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class PasswordEntry extends JDialog {
     @Nonnull
@@ -73,12 +74,19 @@ public class PasswordEntry extends JDialog {
         safety.setValue(Math.max(pair.getKey(), 0));
     }
 
+    @Nullable
+    private char[] lastPassword;
+
     private void registerListeners() {
         buttonOK.addActionListener(e -> close(CloseEvent.Type.CONFIRM));
         buttonCancel.addActionListener(e -> close(CloseEvent.Type.CANCEL));
         checkBox.addActionListener(actionEvent -> ((PasswordField) password).setPasswordVisible(checkBox.isSelected()));
         panel.registerKeyboardAction(e -> close(CloseEvent.Type.CLOSE), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        copy.addActionListener(actionEvent -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(String.valueOf(password.getPassword())), null));
+        copy.addActionListener(actionEvent -> {
+            Clipboard.setContent(String.valueOf(password.getPassword()), (clipboard, transferable) -> copy.setEnabled(true));
+            lastPassword = password.getPassword();
+            copy.setEnabled(false);
+        });
         randomizer.addActionListener(actionEvent -> new Randomizer(this, (password, type) -> {
             if (!type.isConfirm() || password.isEmpty()) return;
             this.password.requestFocus();
@@ -93,6 +101,7 @@ public class PasswordEntry extends JDialog {
             }
         });
         password.addKeyListener(new KeyAdapter() {
+
             @Override
             public void keyTyped(@Nonnull KeyEvent event) {
                 update();
@@ -111,6 +120,7 @@ public class PasswordEntry extends JDialog {
 
             private void update() {
                 char[] password = PasswordEntry.this.password.getPassword();
+                if (!Arrays.equals(lastPassword, password)) copy.setEnabled(true);
                 randomizer.setVisible(password.length == 0);
                 copy.setVisible(!randomizer.isVisible());
                 updateSafety();
