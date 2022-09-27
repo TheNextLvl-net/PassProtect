@@ -6,7 +6,7 @@
 <p>To make PassProtect even more safe, there is a delay after every failed login attempt which gets longer with every try</p>
 <p>PassProtect even offers the possibility to change the look and feel to numerous themes based on your system</p>
 <p>When you let your password unchanged for a long time, PassProtect reminds you to change your password</p>
-<p>For a faster logins, PassProtect offers you the ability to add your phone as login method<br>(only working on linux with android phones) - (adb required)</p>
+<p>For a faster logins, PassProtect offers you the ability to add your phone as login method<br>(only compatible with android phones)</p>
 <hr>
 <h3>Existing features</h3>
 <p>PassProtect offers you the possibility to safely store documents, totp codes (2fa) and Passwords</p>
