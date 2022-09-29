@@ -7,13 +7,19 @@ import lombok.Setter;
 import net.nonswag.tnl.core.api.errors.file.FileLoadException;
 import net.nonswag.tnl.core.api.errors.file.FileSaveException;
 import net.nonswag.tnl.core.api.file.formats.JsonFile;
+import net.nonswag.tnl.core.api.math.MathUtil;
 import net.nonswag.tnl.core.utils.SystemUtil;
 import net.nonswag.tnl.passprotect.Launcher;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Base64;
 
 @Getter
@@ -37,18 +43,40 @@ public class Config extends JsonFile {
     private final String username;
     @Nullable
     private final TrustedDevices trustedDevices;
+    @Nonnull
+    private Image profilePicture;
     private int passwordChangeReminder;
+    private final boolean profilePictureSet;
     private long lastPasswordChange;
 
     public Config(@Nonnull String username) {
         super(username, "config.json");
         this.trustedDevices = new TrustedDevices(this.username = username);
+        Image profilePicture;
+        boolean profilePictureSet;
+        try {
+            profilePicture = new ImageIcon(ImageIO.read(new File(username, "profile-picture.png"))).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+            profilePictureSet = true;
+        } catch (IOException ignored) {
+            BufferedImage image = new BufferedImage(48, 48, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graphics = image.createGraphics();
+            graphics.setClip(new Ellipse2D.Float(0, 0, 48, 48));
+            graphics.setColor(new Color(MathUtil.randomInteger(0, 255), MathUtil.randomInteger(0, 255), MathUtil.randomInteger(0, 255)));
+            graphics.fill(graphics.getClip());
+            graphics.setColor(Color.BLACK);
+            graphics.drawString(String.valueOf(username.charAt(0)), 23, 28);
+            profilePicture = image;
+            profilePictureSet = false;
+        }
+        this.profilePicture = profilePicture;
+        this.profilePictureSet = profilePictureSet;
     }
 
     private Config() {
         super("config.json");
         trustedDevices = null;
         username = "APP";
+        profilePictureSet = false;
     }
 
     @Nonnull

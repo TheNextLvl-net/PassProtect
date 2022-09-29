@@ -40,7 +40,7 @@ public class Login extends Panel {
     @Nonnull
     private JComboBox<String> username;
     @Nonnull
-    private JLabel passwordImage, userImage;
+    private JLabel passwordImage, userImage, profilePicture;
 
     public Login() {
         userImage.setIcon(TreeIconRenderer.Logo.USER.getIcon(Config.APP));
@@ -93,6 +93,8 @@ public class Login extends Panel {
         } catch (Exception ignored) {
         } finally {
             Launcher.applyAppearance(config);
+            if (!config.isProfilePictureSet()) profilePicture.setIcon(null);
+            else profilePicture.setIcon(new ImageIcon(config.getProfilePicture()));
         }
     }
 

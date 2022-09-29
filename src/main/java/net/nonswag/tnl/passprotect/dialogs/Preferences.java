@@ -12,13 +12,17 @@ import net.nonswag.tnl.passprotect.api.files.Storage;
 import net.nonswag.tnl.passprotect.api.files.TrustedDevices;
 
 import javax.annotation.Nonnull;
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,8 +37,11 @@ public class Preferences extends JDialog {
     @Nonnull
     private JScrollPane appearanceScrollBar, trustedDevicesScrollBar;
     @Nonnull
-    private JButton changePassword, deleteUser, install, uninstall;
-    private JButton changeHint;
+    private JButton changePassword, deleteUser, install, uninstall, changeHint;
+    @Nonnull
+    private JTextField username;
+    @Nonnull
+    private JLabel profilePicture;
 
     public Preferences(@Nonnull Config config, @Nonnull Storage storage, int tab) {
         super(PassProtect.getInstance().getWindow(), "Preferences");
@@ -47,6 +54,32 @@ public class Preferences extends JDialog {
             }
         });
         panel.registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        profilePicture.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(@Nonnull MouseEvent event) {
+                try {
+                    JFileChooser fileChooser = new JFileChooser();
+                    fileChooser.setAcceptAllFileFilterUsed(false);
+                    fileChooser.setApproveButtonText("Import");
+                    fileChooser.setDialogTitle("Select a picture...");
+                    fileChooser.setApproveButtonToolTipText("Import selected file");
+                    fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image", "png", "jpeg", "jpg"));
+                    if (fileChooser.showOpenDialog(Preferences.this) != JFileChooser.APPROVE_OPTION) return;
+                    File file = fileChooser.getSelectedFile();
+                    if (!file.exists()) return;
+                    BufferedImage image = ImageIO.read(file);
+                    if (image.getHeight() == image.getWidth()) {
+                        Files.copy(file.toPath(), new File(config.getUsername(), "profile-picture.png").toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        config.setProfilePicture(new ImageIcon(image).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH));
+                        profilePicture.setIcon(new ImageIcon(config.getProfilePicture().getScaledInstance(48, 48, Image.SCALE_SMOOTH)));
+                    } else {
+                        PassProtect.showErrorDialog("Wrong format\n%s:%s".formatted(image.getWidth(), image.getHeight()));
+                    }
+                } catch (IOException e) {
+                    PassProtect.showErrorDialog("Failed to change profile picture", e);
+                }
+            }
+        });
         setResizable(false);
         setPreferredSize(new Dimension(360, 180));
         pack();
@@ -58,6 +91,8 @@ public class Preferences extends JDialog {
     }
 
     private void setupWindow(@Nonnull Config config, @Nonnull Storage storage) {
+        username.setText(config.getUsername());
+        profilePicture.setIcon(new ImageIcon(config.getProfilePicture()));
         install.setEnabled(!PassProtect.isInstalled() && Launcher.getFile() != null);
         uninstall.setEnabled(PassProtect.isInstalled());
         install.setToolTipText(install.isEnabled() ? null : PassProtect.isInstalled() ? "PassProtect is already installed" : "Installation file not found");
