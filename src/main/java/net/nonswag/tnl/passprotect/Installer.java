@@ -4,6 +4,7 @@ import net.nonswag.tnl.core.api.errors.file.FileException;
 import net.nonswag.tnl.core.api.file.formats.TextFile;
 import net.nonswag.tnl.core.api.file.helper.FileDownloader;
 import net.nonswag.tnl.core.api.file.helper.FileHelper;
+import net.nonswag.tnl.core.utils.LinuxUtil;
 import net.nonswag.tnl.core.utils.SystemUtil;
 
 import javax.annotation.Nonnull;
@@ -21,10 +22,11 @@ public class Installer {
         if (Launcher.getFile() == null) throw new FileNotFoundException("Installation file not found");
         String home = System.getProperty("user.home");
         boolean root = "root".equals(System.getenv("USER"));
+        File destination = new File(home, ".pass-protect");
+        installADB(destination, update, root);
         if (!update && root && JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Installing PassProtect as root is not recommended\n" +
                         "Do you really want to continue as root?",
                 "Warning", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) System.exit(1);
-        File destination = new File(home, ".pass-protect");
         try {
             if (update && !destination.exists()) {
                 throw new FileNotFoundException("PassProtect is not installed on this user account");
@@ -35,7 +37,6 @@ public class Installer {
             } catch (FileException e) {
                 PassProtect.showErrorDialog("Failed to copy resource file", e);
             }
-            installADB(destination, update);
             if (!update) {
                 if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Create desktop entry?", null, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     createDesktopEntry(new File(home, "Desktop"), destination.getAbsoluteFile());
@@ -54,16 +55,28 @@ public class Installer {
         }
     }
 
-    private static void installADB(@Nonnull File destination, boolean update) {
+    private static void installADB(@Nonnull File destination, boolean update, boolean root) {
         try {
             if (SystemUtil.TYPE.isWindows()) installWindowsADB(destination, update);
+            else if (SystemUtil.TYPE.isLinux()) installLinuxADB(update, root);
         } catch (Exception e) {
             PassProtect.showErrorDialog("Failed to %s PassProtect".formatted(update ? "update" : "install"), e);
         }
     }
 
+    private static void installLinuxADB(boolean update, boolean root) throws IOException, InterruptedException {
+        if(!root) return;
+        if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you want to %s adb?".formatted(update ? "update" : "install"), update ? "Updater" : "Installer", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+            return;
+        }
+        LinuxUtil.runShellCommand("sudo apt install adb -y");
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static void installWindowsADB(@Nonnull File destination, boolean update) throws IOException {
+        if (JOptionPane.showConfirmDialog(PassProtect.getInstance().getWindow(), "Do you want to %s adb?".formatted(update ? "update" : "install"), update ? "Updater" : "Installer", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+            return;
+        }
         File file = new File(destination, "platform-tools.zip");
         FileDownloader.download("https://dl.google.com/android/repository/platform-tools-latest-windows.zip", file);
         try (ZipFile zipFile = new ZipFile(file)) {
@@ -88,7 +101,6 @@ public class Installer {
         try {
             if (SystemUtil.TYPE.isLinux()) createLinuxDesktopEntry(location, destination);
             else if (SystemUtil.TYPE.isWindows()) createWindowsDesktopEntry(location, destination);
-            else if (SystemUtil.TYPE.isMacOS()) createMacDesktopEntry(location, destination);
             else throw new UnsupportedOperationException("Your os is not supported: " + SystemUtil.TYPE.getName());
         } catch (Exception e) {
             PassProtect.showErrorDialog("Failed to create desktop entry", e);
@@ -115,9 +127,5 @@ public class Installer {
                 WshShell.CurrentDirectory = "%s"
                 WshShell.Run "java -jar PassProtect.jar start installed", 0, false
                 """.formatted(destination)).save();
-    }
-
-    private static void createMacDesktopEntry(@Nonnull File location, @Nonnull File destination) {
-        throw new UnsupportedOperationException("This feature is currently not working on mac");
     }
 }

@@ -43,13 +43,11 @@ public class DeviceInformation extends JDialog {
     private void setupWindow(@Nonnull Preferences preferences, @Nonnull TrustedDevices.Device device, @Nonnull Config config, @Nonnull Storage storage) {
         try {
             Device physicalDevice = new Device(device.getSerialNumber());
-            String battery = "Battery: %s%%".formatted(physicalDevice.getBatteryLevel());
-            if (physicalDevice.getBatteryStatus().equals(Device.Status.CHARGING)) battery += " (Charging)";
             information.add(new JLabel("Status: Connected"));
             information.add(new JLabel("Name: ".concat(device.getName())));
             information.add(new JLabel("IP-Address: ".concat(physicalDevice.getIpAddress())));
             information.add(new JLabel("Mac-Address: ".concat(device.getMacAddress())));
-            information.add(new JLabel(battery));
+            information.add(new JLabel("Battery: %s%%".formatted(physicalDevice.getBatteryLevel())));
         } catch (AdbException ignored) {
             information.add(new JLabel("Status: Disconnected"));
             information.add(new JLabel("Name: ".concat(device.getName())));
