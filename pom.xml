@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.github.weisj</groupId>
             <artifactId>darklaf-core</artifactId>
-            <version>3.0.1</version>
+            <version>3.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -34,7 +34,7 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.9.0</version>
+            <version>2.10</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -56,6 +56,10 @@
             <artifactId>javase</artifactId>
             <version>3.5.0</version>
         </dependency>
+        <dependency>
+            <groupId>net.nonswag.core</groupId>
+            <artifactId>core-api</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
-
 </project>
