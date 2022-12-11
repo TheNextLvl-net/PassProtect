@@ -9,15 +9,14 @@ import lombok.Setter;
 import net.nonswag.core.api.errors.file.FileSaveException;
 import net.nonswag.core.api.file.formats.TextFile;
 import net.nonswag.core.api.file.helper.JsonHelper;
+import net.nonswag.cryptography.AES;
 import net.nonswag.passprotect.api.entry.*;
 import net.nonswag.passprotect.utils.Compressor;
-import net.nonswag.tnl.cryptography.AES;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -45,7 +44,7 @@ public class Storage extends TextFile {
     @Nonnull
     private byte[] securityKey;
 
-    public Storage(@Nonnull String user, @Nonnull byte[] securityKey) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public Storage(@Nonnull String user, @Nonnull byte[] securityKey) throws IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         super(user, "saves.pp");
         this.aes = getAES(this.securityKey = securityKey);
         this.user = user;
@@ -60,7 +59,7 @@ public class Storage extends TextFile {
     @Override
     public void save() throws FileSaveException {
         try {
-            setContent(new String[]{aes.encrypt(parse(getCategories()).toString())});
+            setContent(new String[]{aes.encode(parse(getCategories()).toString())});
         } catch (Exception e) {
             throw new FileSaveException(e);
         } finally {
@@ -68,10 +67,10 @@ public class Storage extends TextFile {
         }
     }
 
-    public void init(boolean reload) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public void init(boolean reload) throws IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         if (reload) load();
         categories.clear();
-        JsonElement root = JsonHelper.parse(aes.decrypt(String.join("", getContent())));
+        JsonElement root = JsonHelper.parse(aes.decode(String.join("", getContent())));
         if (root.isJsonArray()) categories.addAll(parseCategories(root.getAsJsonArray()));
     }
 

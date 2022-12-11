@@ -5,12 +5,11 @@ import com.google.common.hash.Hashing;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import net.nonswag.core.api.file.formats.JsonFile;
-import net.nonswag.tnl.cryptography.AES;
+import net.nonswag.cryptography.AES;
 
 import javax.annotation.Nonnull;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -45,20 +44,20 @@ public class TrustedDevices extends JsonFile {
     }
 
     @Nonnull
-    public String getPassword(@Nonnull net.nonswag.adb.Device device) throws IllegalStateException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public String getPassword(@Nonnull net.nonswag.adb.Device device) throws IllegalStateException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         JsonObject root = getJsonElement().getAsJsonObject();
         if (!root.has(device.getMacAddress())) throw new IllegalStateException("device not trusted");
         JsonObject object = root.get(device.getMacAddress()).getAsJsonObject();
         if (!object.has("password")) throw new IllegalStateException("password is not defined");
-        return getAES(device.getFingerprint()).decrypt(object.get("password").getAsString());
+        return getAES(device.getFingerprint()).decode(object.get("password").getAsString());
     }
 
-    public void trust(@Nonnull net.nonswag.adb.Device device, @Nonnull String password) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public void trust(@Nonnull net.nonswag.adb.Device device, @Nonnull String password) throws IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         JsonObject root = getJsonElement().getAsJsonObject();
         JsonObject object = new JsonObject();
         object.addProperty("name", device.getModel());
         object.addProperty("serial-number", device.getSerialNumber());
-        object.addProperty("password", getAES(device.getFingerprint()).encrypt(password));
+        object.addProperty("password", getAES(device.getFingerprint()).encode(password));
         root.add(device.getMacAddress(), object);
         devices.add(new Device(device));
         save();
