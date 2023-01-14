@@ -16,5 +16,6 @@ the upside of this is, the codes are stored in a much safer way and locked behin
 <hr>
 <h3>Planned features</h3>
 <ul>
+  <li>Portable web application</li>
   <li>Credit card information</li>
 </ul>
