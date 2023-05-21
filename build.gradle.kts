@@ -27,7 +27,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.1")
     implementation("com.google.zxing:javase:3.5.1")
 
-    implementation("com.github.weisj:darklaf-core:3.0.2")
+    implementation("com.formdef:flatlaf:3.1.1")
     implementation("com.warrenstange:googleauth:1.5.0")
 
     implementation("net.thenextlvl.crypto:aes:1.0.0")
