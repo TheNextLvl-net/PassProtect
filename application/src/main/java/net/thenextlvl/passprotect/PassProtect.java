@@ -24,7 +24,7 @@ public class PassProtect {
     public static final File DATA_FOLDER = new File(USER_HOME, ".pass-protect");
     public static final File DATA_FILE = new File(DATA_FOLDER, ".data");
     public static final File SESSION_FILE = new File(DATA_FOLDER, ".pid");
-    public static final File INSTALLATION = new File(DATA_FOLDER, "PassProtect.jar");
+    public static final File INSTALLATION = new File(DATA_FOLDER, "pass-protect.jar");
     public static final File ICON_FILE = new File(DATA_FOLDER, "icon.png");
 
     public static final File ACTIVITIES = new File(USER_HOME, ".local/share/applications");
@@ -41,8 +41,7 @@ public class PassProtect {
 
     @Getter
     private static final FileIO<ApplicationData> dataFile = new GsonFile<>(IO.of(DATA_FILE), new ApplicationData(
-            new File(USER_HOME, "Desktop"),
-            new File(USER_HOME, ".local/share/applications")
+            new File(USER_HOME, "Desktop")
     ), new GsonBuilder()
             .registerTypeAdapter(File.class, new FileAdapter())
             .setPrettyPrinting()
@@ -104,10 +103,6 @@ public class PassProtect {
 
     public static File resolveDesktopEntry() {
         return new File(getDataFile().getRoot().getDesktop(), "pass-protect.desktop");
-    }
-
-    public static File resolveActivitiesEntry() {
-        return new File(getDataFile().getRoot().getActivities(), "pass-protect.desktop");
     }
 
     public static Version getVersion(File file) {

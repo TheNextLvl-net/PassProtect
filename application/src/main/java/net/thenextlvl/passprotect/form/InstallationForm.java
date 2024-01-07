@@ -160,12 +160,12 @@ public class InstallationForm {
     }
 
     private void initActivitiesEntry() {
-        activitiesEntryRow.onActivated(this::selectActivitiesMenu);
         activitiesEntrySwitch.onStateSet(active -> {
-            if (!active && PassProtect.resolveActivitiesEntry().exists())
-                PassProtect.resolveActivitiesEntry().delete();
-            else if (active && !PassProtect.resolveActivitiesEntry().exists())
+            if (!active && PassProtect.ACTIVITIES_ENTRY.exists())
+                PassProtect.ACTIVITIES_ENTRY.delete();
+            else if (active && !PassProtect.ACTIVITIES_ENTRY.exists())
                 createActivitiesEntry();
+            updateDesktopDatabase();
             return false;
         });
     }
@@ -185,14 +185,13 @@ public class InstallationForm {
 
     private void updateActivitiesEntry() {
         activitiesEntrySwitch.setValign(Align.CENTER);
-        activitiesEntrySwitch.setSensitive(PassProtect.getAppData().getActivities().exists());
-        activitiesEntrySwitch.setActive(PassProtect.resolveActivitiesEntry().exists());
+        activitiesEntrySwitch.setSensitive(PassProtect.ACTIVITIES.exists());
+        activitiesEntrySwitch.setActive(PassProtect.ACTIVITIES_ENTRY.exists());
         activitiesEntrySwitch.setTooltipText("Click to toggle the activities menu entry");
         activitiesEntryRow.setTitle("Create an activities entry");
-        activitiesEntryRow.setSubtitle(PassProtect.getAppData().getActivities().getAbsolutePath());
+        activitiesEntryRow.setSubtitle(PassProtect.ACTIVITIES.getAbsolutePath());
         activitiesEntryRow.setSelectable(false);
-        activitiesEntryRow.setActivatable(true);
-        activitiesEntryRow.setTooltipText("Click to select your Activities Menu");
+        activitiesEntryRow.setTooltipText("This is required to handle *.pp files");
         activitiesEntryRow.addSuffix(activitiesEntrySwitch);
     }
 
@@ -215,27 +214,6 @@ public class InstallationForm {
         dialog.setDefaultSize(1000, 800);
         dialog.setModal(true);
         dialog.present();
-    }
-
-    private void selectActivitiesMenu() {
-        activitiesEntrySwitch.setActive(PassProtect.resolveActivitiesEntry().exists());
-        var dialog = new FileChooserDialogExtended("Select your Activities Menu", window, 2,
-                new FileChooserDialogExtended.DialogButton("Select", 0));
-        dialog.onResponse(id -> {
-            if (id != 0) {
-                if (!PassProtect.getAppData().getActivities().exists()) activitiesEntrySwitch.setActive(false);
-                return;
-            }
-            PassProtect.getAppData().setActivities(new File(dialog.getPath()));
-            System.out.println(PassProtect.getAppData().getActivities());
-            activitiesEntryRow.setSubtitle(PassProtect.getAppData().getActivities().getAbsolutePath());
-            dialog.close();
-            updateUI();
-        });
-        dialog.setPath(PassProtect.getAppData().getActivities().getAbsolutePath());
-        dialog.setModal(true);
-        dialog.present();
-        dialog.setDefaultSize(1000, 800);
     }
 
     private void selectImportFile() {
@@ -271,7 +249,7 @@ public class InstallationForm {
     }
 
     private void createActivitiesEntry() {
-        createEntry(PassProtect.resolveActivitiesEntry());
+        createEntry(PassProtect.ACTIVITIES_ENTRY);
     }
 
     public void updateMimeDatabase() throws IOException {
@@ -296,7 +274,8 @@ public class InstallationForm {
                 Name=PassProtect
                 Version=3.0.0
                 Path=%s
-                Exec=%s -jar PassProtect.jar
+                Description=The best password manager out there
+                Exec=%s -jar pass-protect.jar %%U
                 Icon=%s
                 Type=Application
                 Terminal=false
@@ -364,14 +343,15 @@ public class InstallationForm {
         dialog.onResponse(id -> {
             dialog.close();
             if (id != -8) return;
+            PassProtect.sendNotification("Successfully uninstalled PassProtect");
             PassProtect.resolveDesktopEntry().delete();
-            PassProtect.resolveActivitiesEntry().delete();
+            PassProtect.ACTIVITIES_ENTRY.delete();
             if (removeData) delete(PassProtect.DATA_FOLDER);
             else delete(PassProtect.INSTALLATION);
             delete(PassProtect.MIME_TYPE_FILE);
             delete(PassProtect.DATA_FILE);
             delete(PassProtect.ICON_FILE);
-            PassProtect.sendNotification("Successfully uninstalled PassProtect");
+            PassProtect.DATA_FOLDER.delete();
             window.close();
         });
         dialog.setModal(true);

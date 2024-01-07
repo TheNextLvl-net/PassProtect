@@ -13,12 +13,6 @@ import java.io.File;
 @AllArgsConstructor
 public class ApplicationData {
     @SerializedName("desktop") private File desktop;
-    @SerializedName("activities") private File activities;
-
-    public void setActivities(File activities) {
-        this.activities = activities;
-        PassProtect.getDataFile().save();
-    }
 
     public void setDesktop(File desktop) {
         this.desktop = desktop;
