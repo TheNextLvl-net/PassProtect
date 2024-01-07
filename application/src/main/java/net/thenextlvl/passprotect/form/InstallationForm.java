@@ -6,23 +6,29 @@ import ch.bailu.gtk.adw.HeaderBar;
 import ch.bailu.gtk.adw.*;
 import ch.bailu.gtk.gtk.MessageDialog;
 import ch.bailu.gtk.gtk.*;
+import com.google.common.hash.Hashing;
 import core.file.format.TextFile;
 import core.io.IO;
+import net.thenextlvl.crypto.aes.AES;
 import net.thenextlvl.passprotect.PassProtect;
+import net.thenextlvl.passprotect.dialog.PasswordDialog;
+import net.thenextlvl.passprotect.util.GTK;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Base64;
 import java.util.List;
 
 public class InstallationForm {
 
     private final ApplicationWindow window;
 
-    private final ListBox entries = createListBox();
-    private final ListBox installation = createListBox();
-    private final ListBox importing = createListBox();
+    private final ListBox entries = GTK.createListBox();
+    private final ListBox installation = GTK.createListBox();
+    private final ListBox importing = GTK.createListBox();
 
     private final ActionRow desktopEntryRow = new ActionRow();
     private final ActionRow activitiesEntryRow = new ActionRow();
@@ -38,6 +44,8 @@ public class InstallationForm {
 
     public InstallationForm(Application application) {
         this.window = new ApplicationWindow(application);
+
+        window.setTitle("PassProtect");
 
         var content = new Box(Orientation.VERTICAL, 0);
         var headerBar = new HeaderBar();
@@ -85,16 +93,6 @@ public class InstallationForm {
         updateUninstallRow();
 
         updateImportRow();
-    }
-
-    private ListBox createListBox() {
-        var list = new ListBox();
-        list.setMarginTop(32);
-        list.setMarginEnd(32);
-        list.setMarginBottom(32);
-        list.setMarginStart(32);
-        list.addCssClass("boxed-list");
-        return list;
     }
 
     private void updateInstallRow() {
@@ -145,7 +143,7 @@ public class InstallationForm {
         importingRow.setSensitive(PassProtect.isInstalled());
         if (PassProtect.isInstalled()) importingRow.setTooltipText("Click to import existing userdata");
         else importingRow.setTooltipText("PassProtect is not yet installed");
-        importingRow.onActivated(this::importDialog);
+        importingRow.onActivated(this::selectImportFile);
         importingRow.setSelectable(false);
         importingRow.setActivatable(true);
     }
@@ -240,6 +238,34 @@ public class InstallationForm {
         dialog.setDefaultSize(1000, 800);
     }
 
+    private void selectImportFile() {
+        var dialog = new FileChooserDialogExtended("Select the file you want to import", window, 0,
+                new FileChooserDialogExtended.DialogButton("Import", 0));
+        dialog.onResponse(id -> {
+            if (id != 0) {
+                dialog.close();
+                return;
+            }
+            var file = new File(dialog.getPath());
+            if (file.isFile()) try {
+                var content = String.join("", Files.readAllLines(file.toPath(), StandardCharsets.UTF_8));
+                Base64.getDecoder().decode(content);
+                importFile(file, content);
+                dialog.close();
+            } catch (Exception e) {
+                System.err.println("Tried to load invalid file: " + e.getMessage());
+            }
+        });
+        var filter = new FileFilter();
+        filter.setName("PassProtect files");
+        filter.addPattern("*.pp");
+        dialog.asFileChooser().addFilter(filter);
+        dialog.asFileChooser().setCreateFolders(false);
+        dialog.setModal(true);
+        dialog.present();
+        dialog.setDefaultSize(1000, 800);
+    }
+
     private void createDesktopEntry() {
         createEntry(PassProtect.resolveDesktopEntry());
     }
@@ -308,10 +334,6 @@ public class InstallationForm {
         dialog.present();
     }
 
-    private void importDialog() {
-        // todo: implement
-    }
-
     private void confirmationDialog(boolean removeData) {
         var extra = removeData ? "\nYour userdata will be gone for ever" : "";
         var dialog = new MessageDialog(window, 0, 0, 4,
@@ -329,6 +351,41 @@ public class InstallationForm {
         });
         dialog.setModal(true);
         dialog.present();
+    }
+
+    private void importFile(File file, String content) {
+        var dialog = new PasswordDialog(window);
+
+        var headerBar = new HeaderBar();
+        headerBar.setTitleWidget(new WindowTitle("Import userdata", "Decrypt file"));
+        dialog.setTitlebar(headerBar);
+
+        dialog.passwordEntryRow().setTitle("Enter the password for this file");
+        Runnable onClicked = () -> {
+            var password = dialog.passwordEntryRow().asEditable().getText().toString();
+            try {
+                var bytes = password.getBytes(StandardCharsets.UTF_8);
+                var aes = new AES(Hashing.sha256().hashBytes(bytes).asBytes());
+                importContent(aes, content);
+                dialog.close();
+            } catch (Exception e) {
+                if (password.isEmpty())
+                    System.err.println("you have to enter a password");
+                else System.err.println("you entered the wrong password");
+            }
+        };
+        dialog.passwordEntryRow().onEntryActivated(onClicked::run);
+        dialog.confirmButton().onClicked(onClicked::run);
+
+        dialog.setTitle("Import userdata");
+        dialog.setModal(true);
+        dialog.present();
+    }
+
+    private void importContent(AES aes, String content) throws Exception {
+        var decode = aes.decode(content);
+        // todo: if existing data -> merge
+        // todo: otherwise -> use imported data
     }
 
     private void delete(File file) {

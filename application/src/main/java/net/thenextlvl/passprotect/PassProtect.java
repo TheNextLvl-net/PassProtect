@@ -45,7 +45,7 @@ public class PassProtect {
     public static final ApplicationState APPLICATION_STATE = isInstalled() ?
             ApplicationState.AUTHENTICATION : ApplicationState.INSTALLATION;
 
-    private static final Application application = new Application("PassProtect", ApplicationFlags.FLAGS_NONE);
+    private static final Application application = new Application(PassProtect.class.getName(), ApplicationFlags.FLAGS_NONE);
 
     static {
         try {
