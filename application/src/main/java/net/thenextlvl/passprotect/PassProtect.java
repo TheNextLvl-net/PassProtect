@@ -4,6 +4,7 @@ import ch.bailu.gtk.adw.Application;
 import ch.bailu.gtk.adw.ColorScheme;
 import ch.bailu.gtk.adw.StyleManager;
 import ch.bailu.gtk.gio.ApplicationFlags;
+import ch.bailu.gtk.type.Strs;
 import com.google.gson.GsonBuilder;
 import core.file.FileIO;
 import core.file.format.GsonFile;
@@ -15,8 +16,7 @@ import net.thenextlvl.passprotect.application.ApplicationState;
 import net.thenextlvl.passprotect.form.InstallationForm;
 import net.thenextlvl.passprotect.util.Version;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.jar.JarFile;
 
 public class PassProtect {
@@ -33,6 +33,9 @@ public class PassProtect {
     public static final File MIME_FOLDER = new File(USER_HOME, ".local/share/mime");
     public static final File MIME_PACKAGES = new File(MIME_FOLDER, "packages");
     public static final File MIME_TYPE_FILE = new File(MIME_PACKAGES, "pass-protect.xml");
+
+    public static final File INFO_LOG_FILE = new File(DATA_FOLDER, "info.log");
+    public static final File ERROR_LOG_FILE = new File(DATA_FOLDER, "error.log");
 
     public static final File JAVA = new File(System.getProperty("java.home"), "bin/java");
 
@@ -55,6 +58,11 @@ public class PassProtect {
 
     static {
         try {
+            redirectOutput();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        try {
             var path = PassProtect.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             System.out.printf("Executable: %s%n", path);
             FILE = path.endsWith(".jar") ? new File(path).getAbsoluteFile() : null;
@@ -73,8 +81,12 @@ public class PassProtect {
         application.onShutdown(() -> System.out.println("bye!"));
         // initApplication();
         initInstallation();
-        application.run(0, null);
-        application.unref();
+        application.run(args.length, new Strs(args));
+    }
+
+    private static void redirectOutput() throws FileNotFoundException {
+        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(INFO_LOG_FILE)), true));
+        System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(INFO_LOG_FILE)), true));
     }
 
     public static void initApplication() {
