@@ -185,9 +185,9 @@ public class InstallationForm {
 
     private void updateActivitiesEntry() {
         activitiesEntrySwitch.setValign(Align.CENTER);
-        activitiesEntrySwitch.setSensitive(PassProtect.ACTIVITIES.exists());
         activitiesEntrySwitch.setActive(PassProtect.ACTIVITIES_ENTRY.exists());
-        activitiesEntrySwitch.setTooltipText("Click to toggle the activities menu entry");
+        activitiesEntrySwitch.setSensitive(!PassProtect.ACTIVITIES_ENTRY.exists());
+        // activitiesEntrySwitch.setTooltipText("Click to toggle the activities menu entry");
         activitiesEntryRow.setTitle("Create an activities entry");
         activitiesEntryRow.setSubtitle(PassProtect.ACTIVITIES.getAbsolutePath());
         activitiesEntryRow.setSelectable(false);
@@ -249,13 +249,18 @@ public class InstallationForm {
     }
 
     private void createActivitiesEntry() {
+        activitiesEntrySwitch.setSensitive(false);
         createEntry(PassProtect.ACTIVITIES_ENTRY);
     }
 
-    public void updateMimeDatabase() throws IOException {
-        new ProcessBuilder("update-mime-database", PassProtect.MIME_FOLDER.getAbsolutePath())
-                .inheritIO()
-                .start();
+    public void updateMimeDatabase() {
+        try {
+            new ProcessBuilder("update-mime-database", PassProtect.MIME_FOLDER.getAbsolutePath())
+                    .inheritIO()
+                    .start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void updateDesktopDatabase() {
@@ -301,6 +306,7 @@ public class InstallationForm {
                     StandardCopyOption.REPLACE_EXISTING);
             if (mime != null) Files.copy(mime, PassProtect.MIME_TYPE_FILE.toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
+            activitiesEntrySwitch.setActive(true);
             updateMimeDatabase();
             PassProtect.sendNotification("Successfully installed PassProtect");
             // todo: cleanup
@@ -352,6 +358,8 @@ public class InstallationForm {
             delete(PassProtect.DATA_FILE);
             delete(PassProtect.ICON_FILE);
             PassProtect.DATA_FOLDER.delete();
+            updateDesktopDatabase();
+            updateMimeDatabase();
             window.close();
         });
         dialog.setModal(true);
