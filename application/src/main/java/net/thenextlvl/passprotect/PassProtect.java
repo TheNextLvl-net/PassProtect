@@ -17,11 +17,13 @@ import net.thenextlvl.passprotect.form.InstallationForm;
 import net.thenextlvl.passprotect.util.Version;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 
 public class PassProtect {
     public static final File USER_HOME = new File(System.getProperty("user.home"));
     public static final File DATA_FOLDER = new File(USER_HOME, ".pass-protect");
+    public static final File USER_DATA = new File(DATA_FOLDER, "saves.pp");
     public static final File DATA_FILE = new File(DATA_FOLDER, ".data");
     public static final File SESSION_FILE = new File(DATA_FOLDER, ".pid");
     public static final File INSTALLATION = new File(DATA_FOLDER, "pass-protect.jar");
@@ -34,8 +36,8 @@ public class PassProtect {
     public static final File MIME_PACKAGES = new File(MIME_FOLDER, "packages");
     public static final File MIME_TYPE_FILE = new File(MIME_PACKAGES, "pass-protect.xml");
 
-    public static final File INFO_LOG_FILE = new File(DATA_FOLDER, "info.log");
-    public static final File ERROR_LOG_FILE = new File(DATA_FOLDER, "error.log");
+    public static final File LOGS_FOLDER = new File(DATA_FOLDER, "logs");
+    public static final File LOG_FILE = new File(LOGS_FOLDER, getProcessId() + ".log");
 
     public static final File JAVA = new File(System.getProperty("java.home"), "bin/java");
 
@@ -59,6 +61,7 @@ public class PassProtect {
     static {
         try {
             redirectOutput();
+            cleanupLogs();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -70,9 +73,11 @@ public class PassProtect {
             throw new RuntimeException(e);
         }
         VERSION = getVersion(FILE);
+        System.out.printf("Running version: %s%n", VERSION);
     }
 
     public static void main(String[] args) {
+        if (args.length != 0) System.out.printf("Arguments: %s%n", String.join(" ", args));
         System.out.printf("Process Id: %s%n", getProcessId());
         System.out.printf("Java: %s%n", JAVA.getAbsolutePath());
         System.out.printf("User home: %s%n", USER_HOME.getAbsolutePath());
@@ -84,9 +89,17 @@ public class PassProtect {
         application.run(args.length, new Strs(args));
     }
 
+    private static void cleanupLogs() {
+        var time = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1);
+        var files = LOGS_FOLDER.listFiles((file, name) -> name.matches("\\d+\\.log"));
+        if (files != null) for (var file : files) if (file.lastModified() <= time) file.delete();
+    }
+
     private static void redirectOutput() throws FileNotFoundException {
-        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(INFO_LOG_FILE)), true));
-        System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(INFO_LOG_FILE)), true));
+        LOGS_FOLDER.mkdirs();
+        var stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(LOG_FILE)), true);
+        System.setOut(stream);
+        System.setErr(stream);
     }
 
     public static void initApplication() {
@@ -122,7 +135,6 @@ public class PassProtect {
         try (var jar = new JarFile(file)) {
             var attributes = jar.getManifest().getMainAttributes();
             var version = attributes.getValue("Version");
-            System.out.printf("Version: %s%n", version);
             return Version.parse(version);
         } catch (Exception e) {
             e.printStackTrace();

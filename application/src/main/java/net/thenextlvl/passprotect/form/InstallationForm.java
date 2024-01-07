@@ -112,6 +112,7 @@ public class InstallationForm {
         var installed = PassProtect.resolveInstalledVersion();
         var comparator = PassProtect.VERSION.comparator(installed);
         var updatable = PassProtect.VERSION.isNewerThen(installed);
+        System.out.printf("Installed version: %s%n", installed);
         updateRow.setSubtitle(PassProtect.VERSION + " " + comparator + " " + installed);
         updateRow.setSensitive(PassProtect.isInstalled() && updatable);
         if (PassProtect.isInstalled() && PassProtect.hasJarFile() && updatable)
@@ -349,18 +350,19 @@ public class InstallationForm {
         dialog.onResponse(id -> {
             dialog.close();
             if (id != -8) return;
+            window.close();
             PassProtect.sendNotification("Successfully uninstalled PassProtect");
             PassProtect.resolveDesktopEntry().delete();
             PassProtect.ACTIVITIES_ENTRY.delete();
-            if (removeData) delete(PassProtect.DATA_FOLDER);
-            else delete(PassProtect.INSTALLATION);
-            delete(PassProtect.MIME_TYPE_FILE);
-            delete(PassProtect.DATA_FILE);
-            delete(PassProtect.ICON_FILE);
+            if (removeData) PassProtect.USER_DATA.delete();
+            PassProtect.INSTALLATION.delete();
+            PassProtect.MIME_TYPE_FILE.delete();
+            PassProtect.DATA_FILE.delete();
+            PassProtect.ICON_FILE.delete();
+            delete(PassProtect.LOGS_FOLDER);
             PassProtect.DATA_FOLDER.delete();
             updateDesktopDatabase();
             updateMimeDatabase();
-            window.close();
         });
         dialog.setModal(true);
         dialog.present();
