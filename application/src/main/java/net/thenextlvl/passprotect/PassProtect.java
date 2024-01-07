@@ -27,6 +27,13 @@ public class PassProtect {
     public static final File INSTALLATION = new File(DATA_FOLDER, "PassProtect.jar");
     public static final File ICON_FILE = new File(DATA_FOLDER, "icon.png");
 
+    public static final File ACTIVITIES = new File(USER_HOME, ".local/share/applications");
+    public static final File ACTIVITIES_ENTRY = new File(ACTIVITIES, "pass-protect.desktop");
+
+    public static final File MIME_FOLDER = new File(USER_HOME, ".local/share/mime");
+    public static final File MIME_PACKAGES = new File(MIME_FOLDER, "packages");
+    public static final File MIME_TYPE_FILE = new File(MIME_PACKAGES, "pass-protect.xml");
+
     public static final File JAVA = new File(System.getProperty("java.home"), "bin/java");
 
     public static final File FILE;

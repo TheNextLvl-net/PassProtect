@@ -274,6 +274,22 @@ public class InstallationForm {
         createEntry(PassProtect.resolveActivitiesEntry());
     }
 
+    public void updateMimeDatabase() throws IOException {
+        new ProcessBuilder("update-mime-database", PassProtect.MIME_FOLDER.getAbsolutePath())
+                .inheritIO()
+                .start();
+    }
+
+    public void updateDesktopDatabase() {
+        try {
+            new ProcessBuilder("update-desktop-database", PassProtect.ACTIVITIES.getAbsolutePath())
+                    .inheritIO()
+                    .start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void createEntry(File entry) {
         new TextFile(IO.of(entry)).setRoot(List.of("""
                 [Desktop Entry]
@@ -285,7 +301,7 @@ public class InstallationForm {
                 Type=Application
                 Terminal=false
                 Categories=Security;
-                MimeType=application/x-pass-protect;
+                MimeType=application/pass-protect;
                 """
                 .formatted(PassProtect.DATA_FOLDER.getAbsolutePath(),
                         PassProtect.JAVA.getAbsolutePath(),
@@ -294,19 +310,26 @@ public class InstallationForm {
     }
 
     private void install() {
-        try {
+        try (var icon = PassProtect.class.getClassLoader().getResourceAsStream("icon.png");
+             var mime = PassProtect.class.getClassLoader().getResourceAsStream("pass-protect.xml")) {
+
             PassProtect.DATA_FOLDER.mkdirs();
+            PassProtect.MIME_PACKAGES.mkdirs();
+
             Files.copy(PassProtect.FILE.toPath(), PassProtect.INSTALLATION.toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
-            var icon = PassProtect.class.getClassLoader().getResourceAsStream("icon.png");
             if (icon != null) Files.copy(icon, PassProtect.ICON_FILE.toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
+            if (mime != null) Files.copy(mime, PassProtect.MIME_TYPE_FILE.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+            updateMimeDatabase();
             PassProtect.sendNotification("Successfully installed PassProtect");
-            updateUI();
-            // cleanup
+            // todo: cleanup
         } catch (IOException e) {
             PassProtect.sendNotification("Something went wrong during the installation");
             e.printStackTrace();
+        } finally {
+            updateUI();
         }
     }
 
@@ -345,6 +368,8 @@ public class InstallationForm {
             PassProtect.resolveActivitiesEntry().delete();
             if (removeData) delete(PassProtect.DATA_FOLDER);
             else delete(PassProtect.INSTALLATION);
+            delete(PassProtect.MIME_TYPE_FILE);
+            delete(PassProtect.DATA_FILE);
             delete(PassProtect.ICON_FILE);
             PassProtect.sendNotification("Successfully uninstalled PassProtect");
             window.close();
