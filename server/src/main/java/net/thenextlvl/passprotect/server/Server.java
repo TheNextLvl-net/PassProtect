@@ -3,7 +3,9 @@ package net.thenextlvl.passprotect.server;
 import core.file.format.GsonFile;
 import core.io.IO;
 import net.thenextlvl.passprotect.server.config.Config;
+import net.thenextlvl.passprotect.server.routes.account.AccountsRouter;
 import net.thenextlvl.passprotect.server.routes.account.CreateRouter;
+import net.thenextlvl.passprotect.server.routes.account.DeleteRouter;
 import net.thenextlvl.passprotect.server.storage.DataStorage;
 import net.thenextlvl.passprotect.server.storage.DatabaseStorage;
 import org.slf4j.Logger;
@@ -25,6 +27,8 @@ public class Server {
         Spark.port(CONFIG.port());
         registerAccessControl();
         CreateRouter.register();
+        DeleteRouter.register();
+        AccountsRouter.register();
     }
 
     private static void registerAccessControl() {

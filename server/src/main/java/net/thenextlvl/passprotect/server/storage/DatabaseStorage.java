@@ -38,8 +38,8 @@ public class DatabaseStorage implements DataStorage {
     @Override
     public void createAccount(Account account) throws SQLException {
         executeUpdate(
-                "INSERT INTO accounts (email, password, salt) VALUES (?, ?, ?)",
-                account.email(), account.password(), account.salt()
+                "INSERT INTO accounts (email, password, salt, iterations) VALUES (?, ?, ?, ?)",
+                account.email(), account.password(), account.salt(), account.iterations()
         );
     }
 
@@ -48,20 +48,30 @@ public class DatabaseStorage implements DataStorage {
         executeUpdate("DELETE FROM accounts WHERE email = ?", email);
     }
 
+    @Override
+    public void updatePassword(Account account) throws SQLException {
+        executeUpdate(
+                "UPDATE accounts SET password = ?, salt = ?, iterations = ? WHERE email = ?",
+                account.password(), account.salt(), account.iterations(), account.email()
+        );
+    }
+
     private void migrateAccounts() throws SQLException {
         executeUpdate("""
                 CREATE TABLE IF NOT EXISTS accounts (
                     email TEXT NOT NULL UNIQUE,
-                    password TEXT NOT NULL,
-                    salt TEXT NOT NULL
+                    password BLOB NOT NULL,
+                    salt BLOB NOT NULL,
+                    iterations INTEGER NOT NULL
                 )""");
     }
 
     private Account transformRow(ResultSet resultSet) throws SQLException {
         return new Account(
                 resultSet.getString("email"),
-                resultSet.getString("password"),
-                resultSet.getString("salt")
+                resultSet.getInt("iterations"),
+                resultSet.getBytes("password"),
+                resultSet.getBytes("salt")
         );
     }
 

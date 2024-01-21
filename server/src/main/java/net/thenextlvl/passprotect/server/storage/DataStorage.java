@@ -13,4 +13,6 @@ public interface DataStorage {
     void createAccount(Account account) throws SQLException;
 
     void deleteAccount(String email) throws SQLException;
+
+    void updatePassword(Account account) throws SQLException;
 }
