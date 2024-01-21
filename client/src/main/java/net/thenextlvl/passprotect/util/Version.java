@@ -30,11 +30,15 @@ public record Version(int major, int minor, int patch) {
         else return "＜";
     }
 
+    public String name() {
+        return major + "." + minor + "." + patch;
+    }
+
     @Override
     public String toString() {
         if (equals(NONE)) return "none";
         if (equals(ERROR)) return "error";
         if (equals(UNKNOWN)) return "unknown";
-        return "v" + major + "." + minor + "." + patch;
+        return "v" + name();
     }
 }

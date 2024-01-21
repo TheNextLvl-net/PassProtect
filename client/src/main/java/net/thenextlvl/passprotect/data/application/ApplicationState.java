@@ -1,4 +1,4 @@
-package net.thenextlvl.passprotect.application;
+package net.thenextlvl.passprotect.data.application;
 
 public enum ApplicationState {
     AUTHENTICATION,

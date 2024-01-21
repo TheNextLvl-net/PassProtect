@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.thenextlvl.core"
-version = "3.0.6"
+version = "3.0.7"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_19
@@ -38,6 +38,7 @@ dependencies {
 }
 
 tasks.shadowJar {
+    archiveFileName.set("pass-protect-$version.jar")
     minimize()
 }
 

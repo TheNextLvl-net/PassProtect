@@ -11,8 +11,8 @@ import core.file.format.GsonFile;
 import core.io.IO;
 import lombok.Getter;
 import net.thenextlvl.passprotect.adapter.FileAdapter;
-import net.thenextlvl.passprotect.application.ApplicationData;
-import net.thenextlvl.passprotect.application.ApplicationState;
+import net.thenextlvl.passprotect.data.application.ApplicationData;
+import net.thenextlvl.passprotect.data.application.ApplicationState;
 import net.thenextlvl.passprotect.form.InstallationForm;
 import net.thenextlvl.passprotect.util.Version;
 

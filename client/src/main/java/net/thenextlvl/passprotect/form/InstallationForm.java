@@ -278,7 +278,7 @@ public class InstallationForm {
         new TextFile(IO.of(entry)).setRoot(List.of("""
                 [Desktop Entry]
                 Name=PassProtect
-                Version=3.0.0
+                Version=%s
                 Path=%s
                 Description=The best password manager out there
                 Exec=%s -jar pass-protect.jar %%U
@@ -288,7 +288,9 @@ public class InstallationForm {
                 Categories=Security;
                 MimeType=application/pass-protect;
                 """
-                .formatted(PassProtect.DATA_FOLDER.getAbsolutePath(),
+                .formatted(
+                        PassProtect.VERSION.name(),
+                        PassProtect.DATA_FOLDER.getAbsolutePath(),
                         PassProtect.JAVA.getAbsolutePath(),
                         PassProtect.ICON_FILE.getAbsolutePath())
                 .split("\n"))).save();

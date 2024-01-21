@@ -1,4 +1,4 @@
-package net.thenextlvl.passprotect.application;
+package net.thenextlvl.passprotect.data.application;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
