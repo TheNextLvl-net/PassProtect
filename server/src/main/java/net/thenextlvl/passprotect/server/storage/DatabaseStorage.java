@@ -10,7 +10,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+/**
+ * The `DatabaseStorage` class represents a data storage system that uses an SQLite
+ * database to store and retrieve `Account` objects.
+ */
 public class DatabaseStorage implements DataStorage {
     private final Connection connection;
 
@@ -36,42 +41,80 @@ public class DatabaseStorage implements DataStorage {
     }
 
     @Override
+    public Account getAccount(UUID uuid) throws SQLException {
+        return executeQuery("SELECT * FROM accounts WHERE uuid = ? LIMIT 1", this::transformRow, uuid.toString());
+    }
+
+    @Override
     public void createAccount(Account account) throws SQLException {
-        executeUpdate(
-                "INSERT INTO accounts (email, password, salt, iterations) VALUES (?, ?, ?, ?)",
-                account.email(), account.password(), account.salt(), account.iterations()
+        executeUpdate("""
+                        INSERT INTO accounts (
+                            uuid, email,
+                            password, salt, iterations,
+                            token, token_validity
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                account.uuid().toString(), account.email(),
+                account.password(), account.salt(), account.iterations(),
+                account.token(), account.tokenValidity()
         );
     }
 
     @Override
-    public void deleteAccount(String email) throws SQLException {
-        executeUpdate("DELETE FROM accounts WHERE email = ?", email);
+    public void deleteAccount(Account account) throws SQLException {
+        executeUpdate("DELETE FROM accounts WHERE uuid = ?", account.uuid().toString());
+    }
+
+    @Override
+    public void updateToken(Account account) throws SQLException {
+        executeUpdate(
+                "UPDATE accounts SET token = ?, token_validity = ? WHERE uuid = ?",
+                account.token(), account.tokenValidity(), account.uuid().toString()
+        );
     }
 
     @Override
     public void updatePassword(Account account) throws SQLException {
+        executeUpdate("""
+                        UPDATE accounts SET
+                        password = ?, salt = ?, iterations = ?, token = ?, token_validity = ?
+                        WHERE uuid = ?""",
+                account.password(), account.salt(), account.iterations(),
+                account.token(), account.tokenValidity(),
+                account.uuid().toString()
+        );
+    }
+
+
+    @Override
+    public void updateEmail(Account account) throws SQLException {
         executeUpdate(
-                "UPDATE accounts SET password = ?, salt = ?, iterations = ? WHERE email = ?",
-                account.password(), account.salt(), account.iterations(), account.email()
+                "UPDATE accounts SET email = ? WHERE uuid = ?",
+                account.email(), account.uuid().toString()
         );
     }
 
     private void migrateAccounts() throws SQLException {
         executeUpdate("""
                 CREATE TABLE IF NOT EXISTS accounts (
+                    uuid TEXT NOT NULL UNIQUE,
                     email TEXT NOT NULL UNIQUE,
                     password BLOB NOT NULL,
                     salt BLOB NOT NULL,
-                    iterations INTEGER NOT NULL
+                    iterations INTEGER NOT NULL,
+                    token TEXT NOT NULL UNIQUE,
+                    token_validity DATE NOT NULL
                 )""");
     }
 
     private Account transformRow(ResultSet resultSet) throws SQLException {
         return new Account(
+                UUID.fromString(resultSet.getString("uuid")),
                 resultSet.getString("email"),
                 resultSet.getInt("iterations"),
                 resultSet.getBytes("password"),
-                resultSet.getBytes("salt")
+                resultSet.getBytes("salt"),
+                resultSet.getString("token"),
+                resultSet.getDate("token_validity")
         );
     }
 
@@ -99,6 +142,7 @@ public class DatabaseStorage implements DataStorage {
         }
     }
 
+    @FunctionalInterface
     private interface ThrowingFunction<T, R> {
         R apply(T t) throws SQLException;
 
