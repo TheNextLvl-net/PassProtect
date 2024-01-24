@@ -8,20 +8,13 @@ import spark.Request;
 import spark.Response;
 import spark.Spark;
 
-import static net.thenextlvl.passprotect.server.routes.account.AccountRouter.*;
+import static net.thenextlvl.passprotect.server.routes.RouteHelper.*;
 
 public class CreateRouter {
     private static final Logger logger = LoggerFactory.getLogger(CreateRouter.class);
 
     public static void register() {
-        options("/account/create", "HEAD, POST");
-        Spark.head("/account/create", (request, response) -> {
-            var email = request.queryParams("email");
-            if (email == null) return respond(response, 400, "Email cannot be null");
-            var account = fetchAccount(email);
-            return respond(response, account != null ? 409 : 200, account != null ?
-                    "Email address is already registered" : "Account does not exist");
-        });
+        options("/account/create", "POST");
         Spark.post("/account/create", CreateRouter::createAccount);
     }
 
@@ -35,9 +28,10 @@ public class CreateRouter {
         try {
             var password = request.queryParams("password");
             if (password == null) return respond(response, 400, "Password cannot be null");
-            Server.STORAGE.createAccount(new Account(email, password));
+            var account = new Account(email, password);
+            Server.STORAGE.createAccount(account);
             logger.info("Created account {}", email);
-            return respond(response, 201, "Successfully created new account");
+            return respond(response, 201, account);
         } catch (Exception e) {
             logger.error("Failed to create account", e);
             return respond(response, 500, "Something went wrong during account creation");
