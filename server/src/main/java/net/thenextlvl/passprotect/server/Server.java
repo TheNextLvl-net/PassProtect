@@ -6,6 +6,7 @@ import net.thenextlvl.passprotect.server.config.Config;
 import net.thenextlvl.passprotect.server.routes.account.AccountsRouter;
 import net.thenextlvl.passprotect.server.routes.account.CreateRouter;
 import net.thenextlvl.passprotect.server.routes.account.DeleteRouter;
+import net.thenextlvl.passprotect.server.routes.user.LoginRouter;
 import net.thenextlvl.passprotect.server.storage.DataStorage;
 import net.thenextlvl.passprotect.server.storage.DatabaseStorage;
 import org.slf4j.Logger;
@@ -13,22 +14,28 @@ import org.slf4j.LoggerFactory;
 import spark.Spark;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static final File DATA_FOLDER = new File("data");
+    public static final File USER_DATA = new File("users");
     public static Config CONFIG = new GsonFile<>(IO.of(DATA_FOLDER, "config.json"), new Config(
-            3000, "*"
+            3000, "*", TimeUnit.DAYS.toMillis(30)
     )).validate().save().getRoot();
     public static DataStorage STORAGE = new DatabaseStorage();
 
     public static void main(String[] args) {
         Spark.port(CONFIG.port());
+
         registerAccessControl();
+
         CreateRouter.register();
         DeleteRouter.register();
         AccountsRouter.register();
+
+        LoginRouter.register();
     }
 
     private static void registerAccessControl() {
