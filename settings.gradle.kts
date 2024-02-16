@@ -1,4 +1,5 @@
 rootProject.name = "passprotect"
 include("adb")
+include("api")
 include("client")
-include("server")
+include("encryption")
