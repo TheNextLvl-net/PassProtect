@@ -1,5 +1,17 @@
 # PassProtect
 
+> [!WARNING]
+> This project reached EOL and wont receive any further updates<br>
+> The reason for this is a fatal data loss on my end due to a hardware defect<br>
+> PassProtect doesn't make any backups on its own and runs completely locally<br>
+> The new version that was WIP will not be continued because there are better alternatives<br>
+
+> [!NOTE]
+> If you are looking for an open source password manager take a look at one of these:<br>
+> Bitwarden, KeePass, Vaultwarden<br>
+> My personal recommendation is 1Password although it is not free nor open source
+
+
 PassProtect is an easy-to-use password manager that does not require any internet connection.<br/>
 All your data is locked inside a file which is encrypted with the Advanced Encryption Standard (AES)<br/>
 and are only accessible through your master password.<br/>
